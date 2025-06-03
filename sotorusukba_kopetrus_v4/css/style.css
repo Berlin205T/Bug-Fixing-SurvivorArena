@@ -1,0 +1,1088 @@
+@font-face {
+  font-family:Manggo;
+  src: url('../assets/font/MANGOLD.ttf');
+}
+
+@font-face {
+  font-family:WonderBoy;
+  src: url('../assets/font/Wonder\ Boys\ -\ Personal\ Use.ttf');
+}
+
+@font-face {
+  font-family:Adventure;
+  src: url('../assets/font/JungleAdventurer.otf');
+}
+
+/* style.css tambahan untuk winModal, responsive UI */
+/* Enhanced Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+}
+
+.modal.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  position: relative;
+  animation: modalFadeIn 0.4s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-title {
+  color: #520000;
+  font-size: 2rem;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.modal-text {
+  color: #333;
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.modal-form input {
+  padding: 12px 15px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 100%;
+  transition: all 0.3s;
+}
+
+.modal-form input:focus {
+  border-color: #520000;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(82, 0, 0, 0.1);
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+  justify-content: center;
+}
+
+.modal-btn {
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+  flex: 1;
+  max-width: 200px;
+}
+
+.modal-btn-primary {
+  background: #520000;
+  color: white;
+}
+
+.modal-btn-primary:hover {
+  background: #3a0000;
+}
+
+.modal-btn-secondary {
+  background: #ffbe0b;
+  color: #520000;
+}
+
+.modal-btn-secondary:hover {
+  background: #ffca34;
+}
+
+.reward-container {
+  margin: 20px 0;
+}
+
+.reward-code {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #520000;
+  margin: 10px 0;
+  letter-spacing: 2px;
+}
+
+/* Modal form pemenang */
+#winModal form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  gap: 12px;
+}
+
+#winModal input.form-input {
+  width: 90%;
+  max-width: 400px;
+  padding: 12px 16px;
+  font-size: 18px;
+  border-radius: 10px;
+  border: 2px solid #ccc;
+  outline: none;
+  font-family: inherit;
+}
+
+#winModal .form-button {
+  background-color: #ffbe0b;
+  color: #520000;
+  padding: 14px 30px;
+  font-size: 18px;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: all 0.3s ease;
+}
+
+#winModal .form-button:hover {
+  background-color: #ffca32;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  /* Untuk tablet dan HP besar */
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .form-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-content {
+    padding: 20px;
+  }
+  
+  .modal-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .modal-btn {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Untuk HP kecil */
+  .login-container, 
+  .dashboard-container,
+  .admin-container,
+  .data-container {
+    padding: 20px 15px;
+  }
+  
+  .admin-title,
+  .data-title,
+  .dashboard-title {
+    font-size: 1.5rem;
+  }
+  
+  .winner-info {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* LG Standby ME Specific (1080x1920 portrait) */
+@media (min-width: 1080px) and (orientation: portrait) {
+  .login-container,
+  .dashboard-container,
+  .admin-container,
+  .data-container {
+    max-width: 800px;
+    padding: 50px;
+  }
+  
+  .admin-title,
+  .data-title,
+  .dashboard-title {
+    font-size: 2.5rem;
+    margin-bottom: 40px;
+  }
+  
+  .form-group label,
+  .info-label {
+    font-size: 1.3rem;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .modal-form input {
+    padding: 18px 20px;
+    font-size: 1.2rem;
+  }
+  
+  .btn,
+  .modal-btn,
+  .login-btn {
+    padding: 18px 30px;
+    font-size: 1.2rem;
+  }
+  
+  .winner-entry {
+    padding: 30px;
+  }
+  
+  .winner-info {
+    gap: 25px;
+  }
+  
+  .info-item {
+    margin-bottom: 15px;
+  }
+  
+  .info-label {
+    font-size: 1.1rem;
+  }
+  
+  .info-value {
+    font-size: 1.2rem;
+  }
+  
+  .selfie-image {
+    max-height: 400px;
+  }
+}
+
+/* QR Code di winModal */
+.selfie-qr {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.selfie-qr img {
+  width: 160px;
+  height: 160px;
+  border: 4px solid #fff;
+  border-radius: 16px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+/* Responsiveness khusus 1080x1920 atau portrait mode */
+@media screen and (max-width: 1080px) and (orientation: portrait) {
+  #winModal form {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  #winModal input.form-input {
+    font-size: 16px;
+    padding: 10px;
+  }
+
+  #winModal .form-button {
+    font-size: 16px;
+    padding: 12px 20px;
+  }
+}
+
+
+
+/* Cleaned & Optimized style.css for Game Tangkap */
+* {
+  box-sizing: border-box;
+  margin: 0 ;
+  padding: 0;
+  /* border: 1px solid yellow; */
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Fredoka', sans-serif;
+  touch-action: manipulation;
+}
+
+body.index,
+body.game {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: white;
+  position: relative;
+  z-index: 1;
+}
+
+/* Background Styling */
+.background {
+  position: fixed;
+  top: 0;
+  overflow: hidden; /* Jika ada elemen yang meluber, ini akan menyembunyikannya */
+  left: 0;
+  width: 100vw;
+  height: 100vh !important;
+  /* background: linear-gradient(rgba(50, 1, 1, 0.813)), url('../assets/images/background-potrait.jpg') no-repeat center center / cover !important; */
+  background: linear-gradient(360deg,rgba(168, 3, 3, 1) 0%, rgba(128, 0, 0, 1) 49%, rgba(54, 0, 0, 1) 100%);
+  pointer-events: none;
+}
+
+
+/* Frame Images */
+.frame {
+  position: absolute;
+  width: 30vw;
+  height: 30vw;
+  max-width: 300px;
+  max-height: 300px;
+  z-index: 2;
+}
+.top-left { top: 0; left: 0; }
+.top-right { top: 0; right: 0; transform: rotate(90deg); }
+.bottom-left { bottom: 0; left: 0; transform: rotate(-90deg); }
+.bottom-right { bottom: 0; right: 0; transform: rotate(180deg); }
+
+/* Overlay and Content */
+.content {
+  position: relative;
+  z-index: 9;
+  overflow: hidden;
+  top: 0;
+  left: 0;
+  flex-direction: column;
+  height: 100vh !important;
+  width: 100vw;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.overlay {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto;
+  overflow: hidden;
+  /* background: rgba(0, 0, 0, 0.4); */
+  border-radius: 20px;
+  padding: 20px;
+  max-width: 700px;
+  height: 70%;
+}
+
+
+/* Logo and Header */
+.logo {
+  width: 220px;
+  -webkit-filter: drop-shadow(5px 5px 5px #0e0e0e);
+  filter: drop-shadow(5px 5px 5px #131313);
+  /* margin: 20px auto; */
+  margin-bottom: 20px;
+  animation: swing 2s ease-in-out infinite alternate;
+  transition: transform 0.3s ease-in-out;
+}
+.logo:hover {
+  transform: scale(1.1) rotate(3deg);
+}
+.title {
+  font-family:WonderBoy;
+  font-style: bold;
+  /* width: 500px; */
+  font-weight: bolder;
+  font-size: 50px;
+  color: #ffbe0b;
+  margin-bottom: 10px;
+}
+
+#h2_select_reward{
+  font-family:WonderBoy;
+  font-style: bold;
+  /* width: 500px; */
+  font-weight: bolder;
+  font-size: 2rem;
+  color: #ffbe0b;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+.subtitle-bawah {
+  font-size: 12px;
+  position: absolute;
+  top: 95%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Pusatkan sepenuhnya */
+  color:#979797;
+}
+
+.loginindex{
+  font-size: 12px;
+  top: 95%;
+  left: 50%;
+  color: #ffbe0b;
+}
+
+/* Level Buttons */
+.levels h3 {
+  color: #ffe066;
+  font-size: 40px;
+  font-family:WonderBoy;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+.button {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.button button {
+  font-size: 32px;
+  font-weight: bold;
+  font-family:WonderBoy;
+  padding: 12px 24px;
+  background-color: #FFA12B;
+  color: white;
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 5px 0 #915100;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.button button:active {
+  background-color: #F78900;
+  box-shadow: inset 0 2px 0 #915100;
+  transform: translateY(4px);
+}
+
+/* Game Object & Target */
+#gameContainer {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+#title-game{
+  font-family:WonderBoy;
+  font-size: 32px;
+  color: #ffbe0b;
+  display: none;
+  justify-content: center;  /* Pusatkan teks secara horizontal */
+  align-items: center;      /* Pusatkan teks secara vertikal */
+  width: 400px;             /* Atur panjang jadi 300px */
+  height: auto;             /* Bisa disesuaikan, atau tetapkan height jika perlu */
+  z-index: 2;
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Pusatkan sepenuhnya */
+  text-align: center;
+}
+
+#object {
+  transition: transform 0.3s ease;
+  transform-origin: center center;
+}
+#target, #object {
+  position: absolute;
+  top: 50%;
+  width: 190px;
+  height: 190px;
+  display: none;
+  transform: translateY(-50%);
+  z-index: 2;
+}
+#target {
+  width: 260px !important;
+  height: 260px !important;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.8;
+  /* filter: grayscale(100%); */
+  /* filter: brightness(0.5); */
+}
+#object.show {
+  display: block;
+  opacity: 1;
+}
+
+/* Class animasi untuk babi saat kalah */
+#object.fly-lose {
+  animation: shake 0.4s ease, flyAround 6s ease-out forwards;
+}
+
+/* Countdown */
+#countdownOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.825);
+  color: #ffbe0b;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 100px;
+  z-index: 9999;
+  font-family:Manggo;
+}
+
+/* Timer */
+#timer {
+  left: 50%;
+  font-family:Manggo;
+    font-size: 60px;
+    color: #ffbe0b;
+    z-index: 10;
+    /* margin-top: 20px; */
+    /* margin-bottom: 40px; */
+    /* top: 50%; */
+    position: absolute;
+    top: 90%;
+    /* width: 200px; */
+    transform: translate(-50%, -50%);
+    /* height: 150px; */
+    /* display: none; */
+    /* transform: translateY(-50%); */
+    z-index: 2;
+}
+
+/* TOMBOL */
+.button-group {
+  display: flex;
+  gap: 12px; /* jarak antar tombol */
+  justify-content: center;
+  flex-wrap: nowrap; /* tidak wrap ke bawah */
+  margin-top: 20px;
+  flex-direction: row;
+}
+
+.pushable {
+  flex: 1 1 0;
+  min-width: 0; /* penting biar tombol bisa mengecil */
+  max-width: 180px;
+  text-align: center;
+  position: relative;
+  background: transparent;
+  padding: 5px;
+  border: none;
+  cursor: pointer;
+  outline-offset: 4px;
+  outline-color: deeppink;
+  transition: filter 250ms;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+.shadow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: hsl(226, 25%, 69%);
+  border-radius: 8px;
+  filter: blur(2px);
+  will-change: transform;
+  transform: translateY(2px);
+  transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.edge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  border-radius: 8px;
+  background: linear-gradient(
+    to right,
+    hsl(0, 39%, 39%) 0%,
+    hsl(0, 39%, 49%) 8%,
+    hsl(0, 39%, 39%) 92%,
+    hsl(0, 39%, 29%) 100%
+  );
+}
+
+.front {
+  display: block;
+  font-family: 'Fredoka', sans-serif;
+  position: relative;
+  border-radius: 8px;
+  /* background: hsl(248, 53%, 58%); */
+  padding: 16px 32px;
+  color: white;
+  font-weight: 600;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 1rem;
+  /* transform: translateY(-4px); */
+  transition: transform 600ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+
+.pushable:hover {
+  filter: brightness(110%);
+}
+
+.pushable:hover .front {
+  transform: translateY(-6px);
+  transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+}
+
+.pushable:active .front {
+  transform: translateY(-2px);
+  transition: transform 34ms;
+}
+
+.pushable:hover .shadow {
+  transform: translateY(4px);
+  transition: transform 250ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+}
+
+.pushable:active .shadow {
+  transform: translateY(1px);
+  transition: transform 34ms;
+}
+
+.pushable:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Modal Lose - styling sama dengan winModal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.441);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.95);
+  transition: all 0.3s ease;
+  z-index: 10000;
+}
+
+.modal.show {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: #ffffffcc;
+  border-radius: 5px;
+  padding: 20px;
+  text-align: center;
+  max-width: 90%;
+}
+
+.modal-content h2 {
+  font-size: 2rem;
+  color: #d62828;
+  margin-bottom: 10px;
+}
+
+.modal-content p {
+  color: #222222;
+  font-size: 1rem;
+}
+
+.reward-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 5px; /* Menambahkan ruang antara ikon dan teks */
+}
+
+.reward-icon {
+  width: 150px;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+.reward-code {
+  font-weight: bold;
+  color: #000000 !important;
+  font-size: 20px !important;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
+
+/* Tambahan styling untuk halaman Admin, Camera, dan Data */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.form-section label {
+  text-align: left;
+  font-weight: bold;
+  color: #ffa12b;
+  margin-top: 10px;
+}
+
+.form-section input,
+.form-section select {
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  font-size: 1rem;
+  width: 100%;
+}
+
+@media (orientation: potrait){
+  .background{
+    background: linear-gradient(360deg,rgba(168, 3, 3, 1) 0%, rgba(128, 0, 0, 1) 49%, rgba(54, 0, 0, 1) 100%);
+  /* background: linear-gradient(rgba(50, 1, 1, 0.813)), url('../assets/images/background-potrait.jpg') no-repeat center center / cover !important; */
+  }
+}
+@media (orientation: landscape) {
+  .background {
+    background: linear-gradient(360deg,rgba(168, 3, 3, 1) 0%, rgba(128, 0, 0, 1) 49%, rgba(54, 0, 0, 1) 100%);
+    /* background: linear-gradient(rgba(50, 1, 1, 0.813)), url('../assets/images/background-lanscape.jpg') no-repeat center center / cover !important; */
+  }
+    
+  .subtitle {
+    font-size: 15px;
+    margin-bottom: 20px;
+  }
+
+  #target {
+    width: 220px !important; /* Tambahkan sedikit lebar saat di orientasi landscape */
+    height: 170px !important; /* Sesuaikan tinggi jika perlu */
+  }
+
+  .logo {
+    width: 190px;
+    margin-bottom: 20px;
+  
+  }
+}
+
+/* SMARTTV LG27 INC */
+@media (min-width: 1080px) and (orientation: portrait) {
+
+  .background {
+    background: linear-gradient(360deg,rgba(168, 3, 3, 1) 0%, rgba(128, 0, 0, 1) 49%, rgba(54, 0, 0, 1) 100%);
+    /* background: linear-gradient(rgba(50, 1, 1, 0.813)), url('../assets/images/background-potrait.jpg') no-repeat center center / cover !important; */
+  }
+
+  #h2_select_reward{
+    font-family:WonderBoy;
+    font-style: bold;
+    /* width: 500px; */
+    font-weight: bolder;
+    font-size: 4rem;
+    color: #ffbe0b;
+    margin-bottom: 10px;
+  }
+
+  .logo {
+    width: 400px !important;
+    margin-bottom: 90px;
+    margin-top: 100px;
+  } 
+  .front {
+    font-size: 1rem;
+    padding: 12px 20px;
+  }
+
+  #target {
+    width: 430px !important; /* Tambahkan sedikit lebar saat di orientasi landscape */
+    height: 430px !important; /* Sesuaikan tinggi jika perlu */
+  }
+
+  #object {
+    transition: transform 0.3s ease;
+    transform-origin: center center;
+  }
+
+  #object { 
+    width: 300px !important;
+    height: 300px !important;
+  }
+
+  .reward-icon {
+    width: 250px;
+    height: auto;
+    margin-top: 50px;
+  }
+  
+  .selfie-qr img {
+    width: 300px;
+    height: 300px;
+    border: 4px solid #fff;
+    border-radius: 16px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+
+  #countdownOverlay{
+    font-size: 200px;
+  }
+  #title-game{
+    font-size:4rem;
+    align-items: center;      /* Pusatkan teks secara vertikal */
+    width: 600px;             /* Atur panjang jadi 300px */
+    height: auto;             /* Bisa disesuaikan, atau tetapkan height jika perlu */
+    z-index: 2;
+    position: absolute;
+    top: 20%;
+    left: 50%;
+  }
+  .title {
+    font-size: 120px;
+  }
+  .subtitle {
+    font-size: 35px !important;
+  }
+
+  .subtitle-bawah {
+    font-size: 30px !important;
+    top: 97%;
+  }
+
+  .loginindex{
+    font-size: 30px !important;
+  }
+
+  .overlay {
+    width: 90% !important;
+    height: 80% !important;
+    padding: 10px !important;
+  }
+
+  .front {
+    font-size: 1.5rem !important;
+    padding: 14px 22px !important;
+  }
+
+  .button-group {
+    gap: 20px !important;
+  }
+
+  .pushable {
+    max-width: 200px !important;
+    max-height: 100px !important;
+    padding: 6px !important;
+  }
+
+  .button {
+    gap :20px !important;
+  }
+
+  .levels h3 {
+    color: #ffe066;
+    margin-top: 150px !important;
+    font-size: 80px !important; 
+  }
+
+  .button button {
+    font-size: 80px !important ;
+    padding : 20px 35px !important;
+    border-radius: 10px !important ;
+  }
+
+  #timer {
+    font-size: 120px !important;
+  }
+  .modal-content h2 {
+    font-size: 3rem !important;
+  }
+  .modal-content p {
+    font-size: 2em !important;
+  }
+}
+
+/* SAMSUNG SERI ATAS */
+@media (min-width: 376px) and (orientation: portrait) {
+  .logo {
+    width: 180px;
+    margin-bottom: 90px;
+  }
+
+  .title {
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    margin-bottom: 60px;
+  }
+
+  .subtitle-bawah {
+    font-size: 10px;
+    top: 97%;
+  }
+
+  .overlay {
+    width: 90%;
+    height: 70%;
+    padding: 10px;
+  }
+
+  .front {
+    font-size: 0.9rem;
+    padding: 12px 20px;
+  }
+
+  .levels h3 {
+    color: #ffe066;
+    font-size: 42px;
+  }
+
+  .button button {
+    font-size: 45px;
+  }
+
+  .button-group {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pushable {
+    max-width: 140px;
+    padding: 4px;
+  }
+}
+
+/* IPHONE SE INFINIX */
+@media (max-width: 376px) and (orientation: portrait)  {
+  .logo {
+    width: 180px;
+    margin-bottom: 40px;
+  }
+
+  .title {
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+    margin-bottom: 40px;
+  }
+
+  .subtitle-bawah {
+    font-size: 10px;
+    top: 97%;
+  }
+
+  .overlay {
+    width: 90%;
+    height: 80%;
+    padding: 10px;
+  }
+
+  .front {
+    font-size: 0.9rem;
+    padding: 12px 20px;
+  }
+
+  .button-group {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pushable {
+    max-width: 140px;
+    padding: 4px;
+  }
+}
+
+
+/* Animasi dan Efek */
+@keyframes swing {
+  0% { transform: rotate(-3deg) scale(1); }
+  50% { transform: rotate(3deg) scale(1.03); }
+  100% { transform: rotate(-3deg) scale(1); }
+}
+@keyframes pop-in {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+/* Efek getaran sebelum terbang */
+@keyframes shake {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  20% { transform: translate(-48%, -52%) rotate(-5deg); }
+  40% { transform: translate(-52%, -48%) rotate(5deg); }
+  60% { transform: translate(-50%, -50%) rotate(-5deg); }
+  80% { transform: translate(-49%, -51%) rotate(5deg); }
+  100% { transform: translate(-50%, -50%) rotate(0deg); }
+}
+/* Efek terbang dengan rotasi dinamis */
+@keyframes flyAround {
+  0% {
+    transform: translate(0, 0) rotate(0deg); /* Posisi awal */
+    opacity: 1;
+  }
+  20% {
+    transform: translate(150px, -50px) rotate(30deg); /* Gerakan babi ke kanan atas */
+    opacity: 1;
+  }
+  40% {
+    transform: translate(-100px, 100px) rotate(-45deg); /* Babi bergerak ke kiri bawah */
+    opacity: 1;
+  }
+  60% {
+    transform: translate(200px, 150px) rotate(50deg); /* Babi bergerak ke kanan bawah */
+    opacity: 1;
+  }
+  80% {
+    transform: translate(-150px, -100px) rotate(-60deg); /* Babi bergerak ke kiri atas */
+    opacity: 1;
+  }
+  100% {
+    transform: translate(1000px, -1000px) rotate(90deg); /* Babi terbang keluar layar dengan rotasi */
+    opacity: 0; /* Menghilang di akhir */
+  }
+}
+

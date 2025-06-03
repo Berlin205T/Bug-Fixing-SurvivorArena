@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login Admin - Soto Rusuk Ba' Ko Petrus</title>
+    <link rel="stylesheet" href="css/style.css?v=6" />
+    <style>
+      .login-container {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 5px;
+        padding: 40px;
+        width: 90%;
+        max-width: 500px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        margin: 20px;
+      }
+      .login-container h2 {
+        color: #520000;
+        margin-bottom: 30px;
+        font-size: 2rem;
+        font-weight: bold;
+      }
+      .login-container input[type="password"] {
+        width: 100%;
+        padding: 15px 20px;
+        font-size: 1rem;
+        margin-bottom: 25px;
+        border: 2px solid #ddd;
+        border-radius: 12px;
+        transition: all 0.3s;
+      }
+      .login-container input[type="password"]:focus {
+        border-color: #520000;
+        box-shadow: 0 0 0 3px rgba(82, 0, 0, 0.1);
+        outline: none;
+      }
+      .login-btn {
+        background: #ffbe0b;
+        border: none;
+        color: #520000;
+        padding: 15px 30px;
+        font-size: 1.1rem;
+        border-radius: 12px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s;
+        width: 100%;
+        box-shadow: 0 4px 0 #d89e00;
+      }
+      .login-btn:hover {
+        background: #ffca34;
+        transform: translateY(-2px);
+      }
+      .login-btn:active {
+        transform: translateY(1px);
+        box-shadow: 0 2px 0 #d89e00;
+      }
+      .error-message {
+        color: #ff4d4d;
+        margin-top: 15px;
+        font-size: 1rem;
+        min-height: 20px;
+      }
+      .brand-logo {
+        width: 150px;
+        margin-bottom: 30px;
+        filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.2));
+      }
+    </style>
+  </head>
+  <body class="login-page">
+    <div class="background"></div>
+    <div class="content">
+      <div class="login-container">
+        <img src="assets/images/logo.png" alt="Logo Restoran" class="brand-logo" />
+        <h2>Admin Dashboard</h2>
+        <input type="password" id="adminPassword" placeholder="Masukkan Password" />
+        <button class="login-btn" onclick="handleLogin()">MASUK</button>
+        <div id="errorMsg" class="error-message"></div>
+      </div>
+    </div>
+
+    <script src="js/login.js" defer></script>
+  </body>
+</html>

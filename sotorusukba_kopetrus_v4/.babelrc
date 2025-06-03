@@ -1,0 +1,13 @@
+{
+    "presets": [
+        ["@babel/preset-env", {
+            "useBuiltIns": "usage",
+            "corejs": 3,
+            "targets": {
+                "browsers": ["ie 11"]
+            },
+        "forceAllTransforms": true
+        }]
+    ]
+}
+

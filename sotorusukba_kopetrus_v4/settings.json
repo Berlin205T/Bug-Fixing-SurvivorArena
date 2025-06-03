@@ -1,0 +1,23 @@
+{
+    "settings": {
+      "level1": {
+        "speed": "20",
+        "tolerance": "5",
+        "rewards": [
+          {
+            "reward": "Voucher Gratis Soto",
+            "icon": "https://via.placeholder.com/100.png"
+          },
+          {
+            "reward": "Diskon 50%",
+            "icon": "https://via.placeholder.com/100.png"
+          },
+          {
+            "reward": "Minuman Dingin",
+            "icon": "https://via.placeholder.com/100.png"
+          }
+        ]
+      }
+    }
+  }
+  

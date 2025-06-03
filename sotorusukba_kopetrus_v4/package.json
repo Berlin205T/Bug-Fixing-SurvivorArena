@@ -1,0 +1,10 @@
+{
+  "devDependencies": {
+    "@babel/cli": "^7.27.1",
+    "@babel/preset-env": "^7.27.1",
+    "core-js": "^3.42.0"
+  },
+  "scripts": {
+    "build": "babel js --out-dir dist/js && babel service-worker.js --out-file dist/service-worker.js"
+  }
+}
