@@ -115,7 +115,7 @@ function showResultDialog(score) {
     let restartButtonPressed = false;
     let exitButtonPressed = false;
 
-    restartButton.addEventListener('touchend', _ => {
+    restartButton.addEventListener('pointerup', _ => {
         if (restartButtonPressed) return;
 
         restartButtonPressed = true;
@@ -127,7 +127,7 @@ function showResultDialog(score) {
         })
     });
 
-    exitButton.addEventListener('touchend', _ => {
+    exitButton.addEventListener('pointerup', _ => {
         if (exitButtonPressed) return;
 
         exitButtonPressed = true;
@@ -250,7 +250,7 @@ function create_pipe() {
     lastPipeFrame++;
 }
 
-background.addEventListener('touchstart', e => {
+background.addEventListener('pointerdown', e => {
     if (game_state !== 'Play') {
         if (resultDialog?.classList.contains('show'))
             return;
@@ -264,7 +264,7 @@ background.addEventListener('touchstart', e => {
     }
 });
 
-background.addEventListener('touchend', e => {
+background.addEventListener('pointerup', e => {
     if (game_state !== 'Play') {
 
     } else {
