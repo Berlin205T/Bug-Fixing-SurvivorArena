@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <link rel="icon" type="image/x-icon" href="images/favicon.jfif">
+    <title>Angry Birds</title>
+    <style>
+        body {
+            margin: 0;
+            padding:0;
+            overflow: hidden; 
+        }
+        canvas {
+            display: block; 
+            background: url(images/bg.png); 
+            background-attachment:fixed;
+            background-repeat: no-repeat ;
+            background-size: cover;
+        }
+    </style>
+</head>
+<body>
+    <audio autoplay loop>
+        <source src="audios/audio.mp3" type="audio/mp3">
+    </audio>
+    <button id="refreshButton" style="position: absolute; top: 15px; right: 70px; z-index: 10; 
+    padding:15px;
+    margin:25px;
+    font-size:20px;
+    font-weight: 900;
+    cursor: pointer;
+    border-radius: 3px;
+    background:linear-gradient(yellow, orange);
+    color:rgb(20, 16, 16);
+    font-family:Arial, Helvetica, sans-serif;">Ulang</button>
+   <canvas id="gamecanvas"></canvas>
+    <script src="main.js"></script>
+</body>
+</html>

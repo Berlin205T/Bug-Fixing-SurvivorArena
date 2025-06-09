@@ -1,0 +1,299 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-image: url('images/backgroundgame.jpg'); /* Ganti dengan jalur gambar Anda */
+            background-size: cover; /* Mengatur gambar agar menutupi seluruh area */
+            background-position: center; /* Menempatkan gambar di tengah */
+            background-repeat: no-repeat; /* Mencegah gambar diulang */
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.game-container {
+    display: flex; /* Menyusun board dan tutorial dalam satu baris */
+    width: 100%;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.level-up-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #4CAF50; /* Warna latar belakang */
+    color: white; /* Warna teks */
+    padding: 20px 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.5s, bounce 0.5s 0.5s forwards; /* Efek animasi */
+    z-index: 1000; /* Menempatkan notifikasi di atas elemen lain */
+}
+.level-up-notification {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%); /* Gradient background */
+    color: white; /* Color of text */
+    padding: 30px 40px;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+    animation: slideIn 0.5s, bounce 0.5s 0.5s forwards; /* Animation effects */
+    z-index: 1000;
+}
+
+.notification-content {
+    text-align: center;
+}
+
+.notification-content h2 {
+    font-size: 24px;
+    margin: 0;
+}
+
+.notification-content p {
+    font-size: 18px;
+    margin: 10px 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: color 0.3s; /* Transition effect */
+}
+
+.close-btn:hover {
+    color: #FFD700; /* Hover color */
+}
+
+.screen {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 1000;
+}
+
+#username-input {
+    padding: 10px;
+    font-size: 18px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    border: none;
+    width: 80%;
+}
+
+.hidden {
+    display: none;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+
+.hidden {
+    display: none; /* Menyembunyikan alert */
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+#stop-button {
+    background-color: #ff66cc; /* Warna latar belakang */
+    color: white; /* Warna teks */
+    font-size: 18px; /* Ukuran font */
+    padding: 10px 20px; /* Jarak dalam tombol */
+    border: none; /* Menghapus border */
+    border-radius: 5px; /* Sudut yang membulat */
+    cursor: pointer; /* Tangan saat hover */
+    transition: background-color 0.3s, transform 0.2s; /* Efek transisi */
+}
+
+#stop-button:hover {
+    background-color: #ff3399; /* Warna saat hover */
+    transform: scale(1.05); /* Membesar sedikit saat hover */
+}
+
+#stop-button:active {
+    transform: scale(0.95); /* Mengecil sedikit saat ditekan */
+}
+
+
+
+#play-button {
+    background-color: #ff66cc; /* Warna latar belakang */
+    color: white; /* Warna teks */
+    font-size: 18px; /* Ukuran font */
+    padding: 10px 20px; /* Jarak dalam tombol */
+    border: none; /* Menghapus border */
+    border-radius: 5px; /* Sudut yang membulat */
+    cursor: pointer; /* Tangan saat hover */
+    transition: background-color 0.3s, transform 0.2s; /* Efek transisi */
+}
+
+#play-button:hover {
+    background-color: #ff3399; /* Warna saat hover */
+    transform: scale(1.05); /* Membesar sedikit saat hover */
+}
+
+#play-button:active {
+    transform: scale(0.95); /* Mengecil sedikit saat ditekan */
+}
+
+
+h1 {
+    font-size: 32px;
+    color: #000000; /* Warna hijau */
+    margin: 0;
+}
+
+.score-display {
+    font-size: 30px; /* Ukuran font yang lebih besar */
+    font-weight: bold; /* Teks tebal */
+    color: #fff; /* Warna teks putih */
+    background: linear-gradient(45deg, #4caf50, #81c784); /* Gradasi warna */
+    padding: 10px 20px; /* Padding untuk menambah ruang */
+    border-radius: 5px; /* Sudut membulat */
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2); /* Bayangan untuk efek */
+    animation: pulse 1.5s infinite; /* Animasi berdenyut */
+}
+
+.game-board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    background: rgba(255, 255, 255, 0.5);
+    gap: 5px;
+    width: 60%; /* Mengubah lebar board */
+    max-width: 600px; /* Lebar maksimal board */
+}
+
+.level-display {
+    font-size: 24px; /* Ukuran font untuk level */
+    font-weight: bold; /* Teks tebal */
+    color: #fff; /* Warna teks putih */
+    background: linear-gradient(45deg, #2196f3, #64b5f6); /* Gradasi warna biru */
+    padding: 10px 20px; /* Padding untuk menambah ruang */
+    border-radius: 5px; /* Sudut membulat */
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2); /* Bayangan untuk efek */
+}
+
+.tile {
+    width: 100%;
+    padding-top: 100%; /* Membuat tile berbentuk persegi */
+    position: relative;
+    border-radius: 5px;
+    transition: transform 0.3s; /* Transisi saat hover */
+}
+
+
+.tile:hover {
+    transform: scale(1.05); /* Membesar saat hover */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2); /* Bayangan saat hover */
+}
+
+.tutorial {
+    background-color: #f9fbe7; /* Warna latar belakang tutorial */
+    border-radius: 5px;
+    padding: 15px;
+    margin-left: 20px; /* Jarak antara board dan tutorial */
+    width: 35%; /* Lebar tutorial */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.tutorial h3 {
+    color: #388e3c; /* Warna hijau */
+    margin-top: 20px; /* Jarak atas untuk pemisahan */
+}
+
+ol {
+    margin-left: 20px; /* Jarak margin kiri untuk daftar terurut */
+    color: #555; /* Warna teks untuk daftar level */
+}
+
+h2 {
+    margin-top: 0;
+    color: #388e3c; /* Warna hijau */
+}
+
+ul {
+    margin-left: 20px;
+}
+
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column; /* Menjadi kolom di perangkat lebih kecil */
+    }
+
+    .game-board {
+        margin-bottom: 20px; /* Jarak bawah untuk tutorial */
+    }
+
+    .score-display {
+        margin: 0; /* Menghapus margin di perangkat lebih kecil */
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05); /* Sedikit membesar */
+    }
+    100% {
+        transform: scale(1);
+    }
+}

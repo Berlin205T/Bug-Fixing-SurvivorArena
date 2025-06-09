@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="images/favicon.jfif">
+    <title>Angry birds</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        function disimage(){
+            const img= document.getElementById('first');
+            img.classList.add('slide');
+        setTimeout(function(){
+            document.getElementById('main').style.display ='block';
+            document.getElementById('first').style.display='none';
+                }, 500); 
+            }
+            setTimeout(disimage, 1000);
+
+      function navigate(){
+        window.location.href="next.html";
+      }
+      function navinst(){
+        window.location.href="inst.html";
+      }
+     
+    </script>
+</head>
+<body>
+    <img src="images/angry.png"  id="first">
+    <div id="main" >
+        <audio autoplay loop>
+            <source src="audios/audio.mp3" type="audio/mp3">
+        </audio>
+         <img src="images/angrylogo.png" alt="Logo" id="logo"><br>
+        <button id="playy" onclick="navigate()">AYO MULAI</button><br>
+        <button id="inst" onclick="navinst()">INSTRUKSI PERMAINAN</button>
+        <div id="wall"></div>
+    </div>
+</body>
+</html>
