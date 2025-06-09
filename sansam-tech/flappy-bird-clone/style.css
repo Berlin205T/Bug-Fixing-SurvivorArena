@@ -15,9 +15,72 @@
 	height: 100vh;
 	position: absolute;
 	display: flex;
+	flex-direction: column;
 	justify-content: center;
 	align-items: center;
 	pointer-events: none;
+	z-index: 20000;
+}
+.result {
+	background-color: white;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	border-radius: 1em;
+	width: 75vw;
+	transform: scale(0);
+	opacity: 0;
+	transition: transform 0.3s ease, opacity 0.3s ease;
+	pointer-events: none;
+}
+.result.show {
+	transform: scale(1);
+	opacity: 1;
+	pointer-events: auto;
+}
+.result #header {
+	font-size: 1.5em;
+	text-align: center;
+	margin-left: auto;
+	margin-right: auto;
+	padding-top: 1em;
+	padding-bottom: 1em;
+}
+.result #content {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	font-size: 0.75em;
+}
+.result #actions {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-evenly;
+	padding: 1em 0em 1em 0em;
+}
+.result #actions button {
+	background-color: #82f43f;
+	border-style: none;
+	border-radius: 0.5em;
+	overflow: hidden;
+	padding: 1em 0.5em 1em 0.5em;
+	font-weight: bold;
+	width: 8em;
+	pointer-events: auto;
+}
+button:active {
+	animation: pressBounce 0.3s;
+}
+@keyframes pressBounce {
+	0%		{ transform: scale(1); }
+	50%		{ transform: scale(0.9); }
+	100%	{ transform: scale(1); }
+}
+.result #content #finalScore {
+	text-align: center;
+	font-size: 6em;
 }
 .background {
 	height: 100vh;
