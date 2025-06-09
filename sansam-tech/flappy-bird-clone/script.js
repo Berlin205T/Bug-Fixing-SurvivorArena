@@ -74,7 +74,7 @@ function move() {
         birdBounds.y = birdBounds.y - (birdBounds.height * 0.5);
 
         // console.log(birdBounds)
-        drawBoundingBox(birdBounds, 'red')
+        // drawBoundingBox(birdBounds, 'red')
 
         if (pipeBounds.right <= 0) {
             e.remove();
