@@ -1,9 +1,66 @@
 // @ts-check
 
+// const debugLines = document.querySelector('.debug p');
+
+// /**
+//  * @param {string} str 
+//  */
+// const log = (str) => {
+//     if (!debugLines)
+//         return;
+
+//     debugLines.innerHTML += '\n' + str;
+//     // Scroll to bottom after adding new line
+//     if (debugLines.parentElement) {
+//         debugLines.parentElement.scrollTop = debugLines.parentElement.scrollHeight;
+//     }
+// }
+
 const MpPostMessage = /** @type {Window & { MpPostMessage?: (event: string, data: any) => void }} */
     (window).MpPostMessage;
 
-MpPostMessage?.('gameState', { type: 'gameLaunch' });
+const webviewSignalStartRound = () => {
+    // log('webviewSignalStartRound')
+    MpPostMessage?.('gameState', {
+        type: 'startRound'
+    });
+}
+
+/**
+ * @param {boolean} win 
+ * @param {number} score 
+ */
+const webviewSignalEndRound = (win, score) => {
+    // log(`webviewSignalEndRound ${win} ${score}`)
+    MpPostMessage?.('gameState', {
+        type: 'endRound',
+        win,
+        score
+    });
+}
+
+/**
+ * 
+ * @param {*} lastWin 
+ * @param {*} lastScore 
+ */
+const webviewSignalExit = (lastWin, lastScore) => {
+    // log(`webviewSignalExit ${lastWin} ${lastScore}`)
+    MpPostMessage?.('gameState', {
+        type: 'exit',
+        lastWin,
+        lastScore
+    })
+}
+
+const webviewSignalLaunch = () => {
+    // log(`webviewSignalLaunch`)
+    MpPostMessage?.('gameState', {
+        type: 'launch'
+    });
+}
+
+webviewSignalLaunch();
 
 let lastFrameTime = 0;
 const fps = 30; // to save power on mobile phones and not overheat the CPU
@@ -32,6 +89,10 @@ let score_title = /** @type {HTMLElement | null} */ (document.querySelector('.sc
 
 let resultDialog = /** @type {HTMLElement | null} */ (document.querySelector('.popupContainer .result'));
 if (!resultDialog) throw new Error('Can\'t find result dialog box element in document!');
+
+const restartButton = document.querySelector('.result #actions #restart');
+const exitButton = document.querySelector('.result #actions #exit');
+const scoreText = document.querySelector('.result #content #finalScore');
 
 let sound_point = new Audio('sounds effect/point.mp3');
 let sound_die = new Audio('sounds effect/die.mp3');
@@ -86,7 +147,7 @@ function resetGameState() {
 }
 
 /** @param {() => void} onHide */
-function hideResultDialog(onHide) {
+const hideResultDialog = (onHide) => {
     if (!resultDialog)
         return void console.log('[hideResultDialog] Can\'t find resultDialog!');
 
@@ -95,16 +156,20 @@ function hideResultDialog(onHide) {
     setTimeout(() => onHide(), 500);
 }
 
+let restartButtonPressed = false;
+let exitButtonPressed = false;
+
 /** @param {number} score */
-function showResultDialog(score) {
+const showResultDialog = (score) => {
     if (!resultDialog)
         return void console.log('[showResultDialog] Can\'t find resultDialog!');
 
+    if (resultDialog.classList.contains('show'))
+        return;
+
     resultDialog.classList.add('show');
 
-    const restartButton = document.querySelector('.result #actions #restart');
-    const exitButton = document.querySelector('.result #actions #exit');
-    const scoreText = document.querySelector('.result #content #finalScore');
+    webviewSignalEndRound(true, score);
 
     if (scoreText)
         scoreText.innerHTML = String(score);
@@ -112,29 +177,36 @@ function showResultDialog(score) {
     if (!restartButton || !exitButton)
         return void console.log('[showResultDialog] Can\'t find restart or exit button in result dialog!');
 
-    let restartButtonPressed = false;
-    let exitButtonPressed = false;
-
-    restartButton.addEventListener('pointerup', _ => {
+    const onRestartPointerUp = (event) => {
         if (restartButtonPressed) return;
+        // log(`restart button pressed`)
+        console.log(`restart button pressed`)
 
         restartButtonPressed = true;
         hideResultDialog(() => {
-            MpPostMessage?.('gameState', { type: 'gameRestart', score });
+            restartButtonPressed = false;
+            webviewSignalStartRound();
+
             resetGameState();
             create_pipe();
             play();
         })
-    });
+    }
 
-    exitButton.addEventListener('pointerup', _ => {
+    const onExitButtonPointerUp = (event) => {
         if (exitButtonPressed) return;
+        // log(`exit button pressed`)
+        console.log(`exit button pressed`)
 
         exitButtonPressed = true;
         hideResultDialog(() => {
-            MpPostMessage?.('gameState', { type: 'gameEnded', score });
+            exitButtonPressed = false;
+            webviewSignalExit(true, score);
         })
-    });
+    }
+
+    restartButton.addEventListener('pointerup', onRestartPointerUp);
+    exitButton.addEventListener('pointerup', onExitButtonPointerUp);
 }
 
 function move() {
@@ -254,6 +326,10 @@ background.addEventListener('pointerdown', e => {
     if (game_state !== 'Play') {
         if (resultDialog?.classList.contains('show'))
             return;
+
+        // log(`first game start`)
+
+        webviewSignalStartRound();
 
         resetGameState();
         create_pipe();
