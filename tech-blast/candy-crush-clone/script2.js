@@ -84,6 +84,26 @@ class Game {
         this.setUpBoard();
     }
 
+    /**
+     * Logs the current state of the board to the console in a readable grid format.
+     * @param {string} title A title for the log entry.
+     */
+    logBoardState(title) {
+        console.log(`--- ${title} ---`);
+        const boardGrid = [];
+        for (let i = 0; i < this.width; i++) {
+            const row = [];
+            for (let j = 0; j < this.width; j++) {
+                const index = i * this.width + j;
+                const image = this.squares[index].style.backgroundImage;
+                row.push(image ? image.split('/').pop().replace('")', '').slice(0, 3) : '---');
+            }
+            boardGrid.push(row.join(' '));
+        }
+        console.log(boardGrid.join('\n'));
+        console.log(`--- End of State ---`);
+    }
+
     // --- SETUP & INITIALIZATION ---
 
     /**
@@ -342,7 +362,9 @@ class Game {
      * @param {number} id2 The ID of the second square.
      */
     async animateAndProcessSwap(id1, id2) {
-        // --- Input Validation ---
+        console.log(`[SWAP] User initiated swap between square ${id1} and ${id2}`);
+        this.logBoardState("Board State BEFORE Swap");
+        // ... (rest of the function is the same, just keeping it for context)
         if (id2 < 0 || id2 >= this.width * this.width) return;
         const row1 = Math.floor(id1 / this.width);
         const col1 = id1 % this.width;
@@ -363,231 +385,275 @@ class Game {
             return;
         }
 
-        // --- Animate the Swap ---
         const dx = (col2 - col1) * square1.offsetWidth;
         const dy = (row2 - row1) * square1.offsetHeight;
         square1.style.transform = `translate(${dx}px, ${dy}px)`;
         square2.style.transform = `translate(${-dx}px, ${-dy}px)`;
 
-        await this.sleep(200); // Wait for the animation to complete
+        await this.sleep(200);
 
-        // --- Update the Board State ---
         square1.style.backgroundImage = candy2;
         square2.style.backgroundImage = candy1;
         square1.style.transform = '';
         square2.style.transform = '';
+        this.logBoardState("Board State AFTER Swap (before match check)");
 
-        // --- Consume a Move and Process the Board ---
-        // A move is always consumed.
         this.movesAvailable--;
         this.updateUI();
-
-        // Let processBoardChanges handle all matching, clearing, and cascading.
-        // It will find the match we just made and correctly trigger the drop/refill.
-        // If no match was made, it will simply unlock the board.
         this.processBoardChanges();
     }
 
     // --- GAME LOOP & LOGIC ---
 
     /**
-     * The main game loop, triggered after a move or special item use. It handles matching,
-     * dropping, and refilling candies until the board is stable. This version is robust
-     * and handles any empty squares, not just those from initial matches.
+     * The main game loop. It now orchestrates the entire cycle of checking for matches,
+     * clearing them, animating gravity, and then re-checking for cascading matches.
      */
     async processBoardChanges() {
+        console.log(`[LOOP] --- Starting new processBoardChanges cycle ---`);
         this.isBoardLocked = true;
 
-        // We will loop at least once to handle the initial change.
-        // The loop continues as long as a subsequent check finds new matches.
-        let foundMatchesInCycle = true;
-        while (foundMatchesInCycle) {
+        let cycleCount = 1;
+        while (true) {
+            console.log(`[LOOP] Cycle #${cycleCount}: Finding all matches.`);
+            // Find all matches on the current board without changing it yet.
+            const matchData = this.findAllMatches();
 
-            // Always try to drop and refill first. This handles the empty board
-            // from bombs or any other gaps.
-            this.dropCandies();
-            this.refillBoard();
-            await this.sleep(200); // Give a moment for visual effect
-
-            // Now that the board is full again, check for any matches.
-            foundMatchesInCycle = this.findAndClearAllMatches();
-
-            if (foundMatchesInCycle) {
+            if (matchData.indicesToClear.size > 0) {
+                console.log(`[LOOP] Cycle #${cycleCount}: Matches found. Indices to clear:`, [...matchData.indicesToClear]);
                 new Audio('sound-effects/match1.mp3').play();
-                // Wait to show the user the new match that just cleared.
+
+                // Now, handle the matches: update score, create special items, and clear squares.
+                this.handleMatches(matchData);
+
+                // Wait for a moment so the user can see what was cleared.
                 await this.sleep(200);
+
+                console.log(`[LOOP] Cycle #${cycleCount}: Calling animateGravity.`);
+                await this.animateGravity();
+
+                // Loop again to check for cascades.
+                cycleCount++;
+            } else {
+                // If no matches were found, the board is stable. We can exit the loop.
+                console.log(`[LOOP] Cycle #${cycleCount}: No matches found. Board is stable.`);
+                break;
             }
         }
 
-        // After the board is fully stable, unlock it and check for game over.
         this.isBoardLocked = false;
+        console.log(`[LOOP] --- processBoardChanges cycle complete. Board unlocked. ---`);
         this.checkGameOver();
     }
 
     /**
-     * Finds and clears all types of matches on the board, creating special items for
-     * matches of 4 or more. It prioritizes longer matches over shorter ones.
-     * @returns {boolean} True if any match was found and cleared, false otherwise.
+     * Finds all matches on the board and returns a plan of what to do.
+     * This function is "read-only" and does NOT modify the board state.
+     * @returns {{indicesToClear: Set<number>, specialItemsToCreate: Array<{index: number, type: string}>}}
      */
-    findAndClearAllMatches() {
-        if (!this.levelConfiguration) return false;
-
-        const clearedIndices = new Set();
+    findAllMatches() {
+        const matchData = {
+            indicesToClear: new Set(),
+            specialItemsToCreate: []
+        };
         const processedIndices = new Set();
-        let matchFound = false;
 
-        // Check for matches of 4 (bombs) and 2x2 squares (dynamite) FIRST
+        // Check for special matches (4-in-a-row, 2x2) FIRST
         for (let i = 0; i < this.width * this.width; i++) {
             if (processedIndices.has(i)) continue;
-
             const color = this.squares[i].style.backgroundImage;
-            if (!color) continue;
+            if (!color || color.includes('bomb') || color.includes('dynamite')) continue;
 
-            // Check for row of 4
-            if (i % this.width <= this.width - 4 &&
-                this.squares[i + 1].style.backgroundImage === color &&
-                this.squares[i + 2].style.backgroundImage === color &&
-                this.squares[i + 3].style.backgroundImage === color) {
-
+            // Row of 4
+            if (i % this.width <= this.width - 4 && this.squares[i + 1].style.backgroundImage === color && this.squares[i + 2].style.backgroundImage === color && this.squares[i + 3].style.backgroundImage === color) {
                 const indices = [i, i + 1, i + 2, i + 3];
+                matchData.specialItemsToCreate.push({ index: i, type: 'bomb' });
+                matchData.indicesToClear.add(i + 1); matchData.indicesToClear.add(i + 2); matchData.indicesToClear.add(i + 3);
                 indices.forEach(index => processedIndices.add(index));
-                this.squares[i].style.backgroundImage = 'url(images/bomb.png)'; // Create bomb
-                new Audio('sound-effects/bomb-created.mp3').play();
-                clearedIndices.add(i + 1);
-                clearedIndices.add(i + 2);
-                clearedIndices.add(i + 3);
-                matchFound = true;
-                continue; // Move to the next unprocessed square
-            }
-
-            // Check for column of 4
-            if (i < this.width * (this.width - 3) &&
-                this.squares[i + this.width].style.backgroundImage === color &&
-                this.squares[i + this.width * 2].style.backgroundImage === color &&
-                this.squares[i + this.width * 3].style.backgroundImage === color) {
-
-                const indices = [i, i + this.width, i + this.width * 2, i + this.width * 3];
-                indices.forEach(index => processedIndices.add(index));
-                this.squares[i].style.backgroundImage = 'url(images/bomb.png)'; // Create bomb
-                new Audio('sound-effects/bomb-created.mp3').play();
-                clearedIndices.add(i + this.width);
-                clearedIndices.add(i + this.width * 2);
-                clearedIndices.add(i + this.width * 3);
-                matchFound = true;
                 continue;
             }
-
-            // Check for 2x2 square
-            if (i % this.width < this.width - 1 && i < this.width * (this.width - 1) &&
-                this.squares[i + 1].style.backgroundImage === color &&
-                this.squares[i + this.width].style.backgroundImage === color &&
-                this.squares[i + this.width + 1].style.backgroundImage === color) {
-
-                const indices = [i, i + 1, i + this.width, i + this.width + 1];
+            // Column of 4
+            if (i < this.width * (this.width - 3) && this.squares[i + this.width].style.backgroundImage === color && this.squares[i + this.width * 2].style.backgroundImage === color && this.squares[i + this.width * 3].style.backgroundImage === color) {
+                const indices = [i, i + this.width, i + this.width * 2, i + this.width * 3];
+                matchData.specialItemsToCreate.push({ index: i, type: 'bomb' });
+                matchData.indicesToClear.add(i + this.width); matchData.indicesToClear.add(i + this.width * 2); matchData.indicesToClear.add(i + this.width * 3);
                 indices.forEach(index => processedIndices.add(index));
-                this.squares[i].style.backgroundImage = 'url(images/dynamite.png)'; // Create dynamite
-                new Audio('sound-effects/bomb-created.mp3').play();
-                clearedIndices.add(i + 1);
-                clearedIndices.add(i + this.width);
-                clearedIndices.add(i + this.width + 1);
-                matchFound = true;
+                continue;
+            }
+            // 2x2 Square for Dynamite
+            if (i % this.width < this.width - 1 && i < this.width * (this.width - 1) && this.squares[i + 1].style.backgroundImage === color && this.squares[i + this.width].style.backgroundImage === color && this.squares[i + this.width + 1].style.backgroundImage === color) {
+                const indices = [i, i + 1, i + this.width, i + this.width + 1];
+                matchData.specialItemsToCreate.push({ index: i, type: 'dynamite' });
+                matchData.indicesToClear.add(i + 1); matchData.indicesToClear.add(i + this.width); matchData.indicesToClear.add(i + this.width + 1);
+                indices.forEach(index => processedIndices.add(index));
                 continue;
             }
         }
 
-        // Now, check for matches of 3 on any remaining unprocessed squares
+        // Now, check for 3-matches on any remaining unprocessed squares
         for (let i = 0; i < this.width * this.width; i++) {
             if (processedIndices.has(i)) continue;
-
             const color = this.squares[i].style.backgroundImage;
-            if (!color) continue;
+            if (!color || color.includes('bomb') || color.includes('dynamite')) continue;
 
-            // Check for row of 3
-            if (i % this.width <= this.width - 3 &&
-                this.squares[i + 1].style.backgroundImage === color &&
-                this.squares[i + 2].style.backgroundImage === color) {
-
+            if (i % this.width <= this.width - 3 && this.squares[i + 1].style.backgroundImage === color && this.squares[i + 2].style.backgroundImage === color) {
                 const indices = [i, i + 1, i + 2];
-                indices.forEach(index => {
-                    clearedIndices.add(index);
-                    processedIndices.add(index);
-                });
-                matchFound = true;
+                indices.forEach(index => { matchData.indicesToClear.add(index); processedIndices.add(index); });
             }
-            // Check for column of 3
-            if (i < this.width * (this.width - 2) &&
-                this.squares[i + this.width].style.backgroundImage === color &&
-                this.squares[i + this.width * 2].style.backgroundImage === color) {
-
+            if (i < this.width * (this.width - 2) && this.squares[i + this.width].style.backgroundImage === color && this.squares[i + this.width * 2].style.backgroundImage === color) {
                 const indices = [i, i + this.width, i + this.width * 2];
-                indices.forEach(index => {
-                    clearedIndices.add(index);
-                    processedIndices.add(index);
-                });
-                matchFound = true;
+                indices.forEach(index => { matchData.indicesToClear.add(index); processedIndices.add(index); });
             }
         }
-
-        // If any matches were found, clear the squares and update the score
-        if (clearedIndices.size > 0) {
-            let candiesCollected = 0;
-            const requiredColorUrl = `url("images/${this.levelConfiguration.candiesRequired[0]}.png")`;
-
-            clearedIndices.forEach(index => {
-                if (this.squares[index].style.backgroundImage === requiredColorUrl) {
-                    candiesCollected++;
-                }
-                this.squares[index].style.backgroundImage = '';
-            });
-            this.handleScore(candiesCollected);
-            return true;
-        }
-
-        return matchFound; // Will be true if a special item was created but nothing was cleared yet
+        return matchData;
     }
 
     /**
-     * Moves existing candies down to fill empty spaces using a column-by-column
-     * compaction method. This ensures that all gaps are correctly filled.
+     * Executes the plan from findAllMatches. It modifies the board by clearing squares,
+     * creating special items, and updating the score.
+     * @param {{indicesToClear: Set<number>, specialItemsToCreate: Array<{index: number, type: string}>}} matchData
      */
-    dropCandies() {
-        for (let col = 0; col < this.width; col++) {
-            // 1. Read all existing candies in the current column from top to bottom.
-            const candiesInColumn = [];
-            for (let row = 0; row < this.width; row++) {
-                const index = row * this.width + col;
-                if (this.squares[index].style.backgroundImage !== '') {
-                    candiesInColumn.push(this.squares[index].style.backgroundImage);
-                }
-            }
+    handleMatches(matchData) {
+        console.log(`[HANDLE] Executing match plan.`);
+        console.log(`[HANDLE] Special items to create:`, matchData.specialItemsToCreate);
+        console.log(`[HANDLE] Indices to clear:`, [...matchData.indicesToClear]);
 
-            // 2. Clear the entire column in the main squares array.
-            for (let row = 0; row < this.width; row++) {
-                const index = row * this.width + col;
-                this.squares[index].style.backgroundImage = '';
-            }
+        if (!this.levelConfiguration) return;
+        let candiesCollected = 0;
+        const requiredColorUrl = `url("images/${this.levelConfiguration.candiesRequired[0]}.png")`;
 
-            // 3. Place the candies back into the column, starting from the bottom.
-            let bottomRow = this.width - 1;
-            for (let i = candiesInColumn.length - 1; i >= 0; i--) {
-                const index = bottomRow * this.width + col;
-                this.squares[index].style.backgroundImage = candiesInColumn[i];
-                bottomRow--;
+        matchData.indicesToClear.forEach(index => {
+            if (this.squares[index].style.backgroundImage === requiredColorUrl) {
+                candiesCollected++;
             }
-        }
-    }
-
-    /**
-     * Fills any empty square on the board with a new random candy.
-     * This is called after dropCandies has compacted everything down.
-     */
-    refillBoard() {
-        this.squares.forEach(square => {
-            if (square.style.backgroundImage === '') {
-                const newColorIndex = Math.floor(Math.random() * this.colors.length);
-                square.style.backgroundImage = this.colors[newColorIndex];
-            }
+            this.squares[index].style.backgroundImage = '';
         });
+
+        matchData.specialItemsToCreate.forEach(item => {
+            if (this.squares[item.index].style.backgroundImage === requiredColorUrl) {
+                candiesCollected++;
+            }
+            this.squares[item.index].style.backgroundImage = `url(images/${item.type}.png)`;
+            new Audio('sound-effects/bomb-created.mp3').play();
+        });
+
+        if (candiesCollected > 0) {
+            this.handleScore(candiesCollected);
+        }
+        this.logBoardState("Board State AFTER Matches Cleared");
+    }
+
+    /**
+     * Calculates and animates the gravity effect for all columns using a robust
+     * three-phase approach: Plan, Animate, and Finalize. This prevents state
+     * corruption and visual bugs.
+     */
+    async animateGravity() {
+        console.log(`[GRAVITY] --- Starting animateGravity ---`);
+        const animationDuration = 300;
+        const promises = [];
+        // A pristine, read-only copy of the board's state BEFORE animations are planned.
+        const initialBoardImages = this.squares.map(s => s.style.backgroundImage);
+        console.log('[GRAVITY] Captured initial board state for planning.');
+        // The master plan for what the board will look like after everything is done.
+        const finalBoardState = Array(this.width * this.width).fill(null);
+
+        for (let col = 0; col < this.width; col++) {
+            // --- PHASE 1: PLAN --- (No changes here)
+            const existingCandiesInCol = [];
+            for (let row = 0; row < this.width; row++) {
+                const index = row * this.width + col;
+                if (initialBoardImages[index]) {
+                    existingCandiesInCol.push(initialBoardImages[index]);
+                }
+            }
+
+            const emptySlots = this.width - existingCandiesInCol.length;
+
+            for (let i = 0; i < emptySlots; i++) {
+                const toIndex = i * this.width + col;
+                finalBoardState[toIndex] = this.colors[Math.floor(Math.random() * this.colors.length)];
+            }
+
+            existingCandiesInCol.forEach((image, i) => {
+                const toIndex = (emptySlots + i) * this.width + col;
+                finalBoardState[toIndex] = image;
+            });
+        }
+        console.log(`[GRAVITY] Master plan for final board state has been created.`);
+
+
+        // --- PHASE 2: ANIMATE --- (Modified)
+        for (let col = 0; col < this.width; col++) {
+            const existingCandiesInCol = [];
+            const originalIndexes = [];
+
+            for (let row = 0; row < this.width; row++) {
+                const index = row * this.width + col;
+                if (initialBoardImages[index]) {
+                    existingCandiesInCol.push(initialBoardImages[index]);
+                    originalIndexes.push(index);
+                }
+            }
+            const emptySlots = this.width - existingCandiesInCol.length;
+
+            existingCandiesInCol.forEach((_, i) => {
+                const fromIndex = originalIndexes[i];
+                const toRow = emptySlots + i;
+                const fromRow = Math.floor(fromIndex / this.width);
+                const fallDistance = toRow - fromRow;
+
+                if (fallDistance > 0) {
+                    const squareToAnimate = this.squares[fromIndex];
+                    console.log(`[GRAVITY Col ${col}] Animating candy from ${fromIndex} to fall ${fallDistance} rows.`);
+                    squareToAnimate.style.transition = `transform ${animationDuration}ms ease-in`;
+                    squareToAnimate.style.transform = `translateY(${fallDistance * squareToAnimate.offsetHeight}px)`;
+                    promises.push(this.sleep(animationDuration));
+                }
+            });
+
+            for (let i = 0; i < emptySlots; i++) {
+                const toIndex = i * this.width + col;
+                const square = this.squares[toIndex];
+                console.log(`[GRAVITY Col ${col}] Animating NEW candy dropping into index ${toIndex}`);
+                // ***** FIX: DO NOT SET THE BACKGROUND IMAGE HERE *****
+                // The square will be visually empty as it drops, which is fine.
+                // It will get its image in the Finalize phase.
+                square.style.transition = 'none'; // So it can be teleported instantly
+                square.style.transform = `translateY(-${(i + 1) * square.offsetHeight}px)`;
+
+                promises.push(new Promise(resolve => {
+                    setTimeout(() => {
+                        square.style.transition = `transform ${animationDuration}ms ease-out`;
+                        square.style.transform = 'translateY(0)';
+                        resolve(undefined);
+                    }, 50); // Small delay to stagger drops
+                }));
+            }
+        }
+
+        console.log(`[GRAVITY] Waiting for ${promises.length} animation promises...`);
+        // Wait for the longest animation to complete.
+        if (promises.length > 0) {
+            await this.sleep(animationDuration + 100);
+        }
+
+
+        // --- PHASE 3: FINALIZE ---
+        console.log(`[GRAVITY] --- Finalizing Board State ---`);
+        this.squares.forEach((square, i) => {
+            // Reset all transforms and transitions first to prevent visual glitches.
+            square.style.transition = 'none';
+            square.style.transform = '';
+            // Now, apply the master plan. This is the single source of truth.
+            square.style.backgroundImage = finalBoardState[i] || '';
+        });
+
+        // Add a micro-delay to allow the browser to render the final state before the next check
+        await this.sleep(20);
+
+        this.logBoardState("Board State AFTER Gravity and Finalization");
+        console.log(`[GRAVITY] --- animateGravity Complete ---`);
     }
 
     // --- SPECIAL CANDY LOGIC ---

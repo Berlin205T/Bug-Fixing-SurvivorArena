@@ -23,6 +23,7 @@ body {
   aspect-ratio: 1;
   background-color: rgba(73, 189, 27, 0.504);
   border-radius: 7px;
+  overflow: hidden; /* This is the new, crucial property */
 }
 
 #board .square {
@@ -32,6 +33,8 @@ body {
   background-repeat: no-repeat;
   background-color: rgba(244, 243, 243, 0.46);
   box-shadow: inset 0 0 6px #a1ae93;
+  transition: transform 0.2s ease-in-out;
+  touch-action: none; /* Prevents scrolling on touch devices */
 }
 
 #control-div {
