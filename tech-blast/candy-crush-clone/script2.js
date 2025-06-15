@@ -391,62 +391,149 @@ class Game {
     // --- GAME LOOP & LOGIC ---
 
     /**
-     * The main game loop, triggered after a move. It handles matching, dropping,
-     * and refilling candies until the board is stable.
+     * The main game loop, triggered after a move or special item use. It handles matching,
+     * dropping, and refilling candies until the board is stable. This version is robust
+     * and handles any empty squares, not just those from initial matches.
      */
     async processBoardChanges() {
         this.isBoardLocked = true;
-        let hasChanged = true;
 
-        while (hasChanged) {
-            const matchesFound = this.findAndClearAllMatches();
-            if (matchesFound) {
+        // We will loop at least once to handle the initial change.
+        // The loop continues as long as a subsequent check finds new matches.
+        let foundMatchesInCycle = true;
+        while (foundMatchesInCycle) {
+
+            // Always try to drop and refill first. This handles the empty board
+            // from bombs or any other gaps.
+            this.dropCandies();
+            this.refillBoard();
+            await this.sleep(200); // Give a moment for visual effect
+
+            // Now that the board is full again, check for any matches.
+            foundMatchesInCycle = this.findAndClearAllMatches();
+
+            if (foundMatchesInCycle) {
                 new Audio('sound-effects/match1.mp3').play();
-                await this.sleep(200); // Wait for user to see cleared candies
-                this.dropCandies();
-                await this.sleep(200); // Wait for drop animation
-                this.refillBoard();
-                hasChanged = true;
-            } else {
-                hasChanged = false;
+                // Wait to show the user the new match that just cleared.
+                await this.sleep(200);
             }
         }
 
+        // After the board is fully stable, unlock it and check for game over.
         this.isBoardLocked = false;
         this.checkGameOver();
     }
 
     /**
-     * Finds and clears all types of matches (rows, columns) on the board.
+     * Finds and clears all types of matches on the board, creating special items for
+     * matches of 4 or more. It prioritizes longer matches over shorter ones.
      * @returns {boolean} True if any match was found and cleared, false otherwise.
      */
     findAndClearAllMatches() {
         if (!this.levelConfiguration) return false;
-        const matchedIndices = new Set();
 
-        const checkAndAdd = (indices, color) => {
-            if (!color || color === '') return;
-            if (indices.every(index => this.squares[index].style.backgroundImage === color)) {
-                indices.forEach(index => matchedIndices.add(index));
-            }
-        };
+        const clearedIndices = new Set();
+        const processedIndices = new Set();
+        let matchFound = false;
 
-        // Check for matches of 3
+        // Check for matches of 4 (bombs) and 2x2 squares (dynamite) FIRST
         for (let i = 0; i < this.width * this.width; i++) {
-            // Rows
-            if (i % this.width <= this.width - 3) {
-                checkAndAdd([i, i + 1, i + 2], this.squares[i].style.backgroundImage);
+            if (processedIndices.has(i)) continue;
+
+            const color = this.squares[i].style.backgroundImage;
+            if (!color) continue;
+
+            // Check for row of 4
+            if (i % this.width <= this.width - 4 &&
+                this.squares[i + 1].style.backgroundImage === color &&
+                this.squares[i + 2].style.backgroundImage === color &&
+                this.squares[i + 3].style.backgroundImage === color) {
+
+                const indices = [i, i + 1, i + 2, i + 3];
+                indices.forEach(index => processedIndices.add(index));
+                this.squares[i].style.backgroundImage = 'url(images/bomb.png)'; // Create bomb
+                new Audio('sound-effects/bomb-created.mp3').play();
+                clearedIndices.add(i + 1);
+                clearedIndices.add(i + 2);
+                clearedIndices.add(i + 3);
+                matchFound = true;
+                continue; // Move to the next unprocessed square
             }
-            // Columns
-            if (i < this.width * (this.width - 2)) {
-                checkAndAdd([i, i + this.width, i + this.width * 2], this.squares[i].style.backgroundImage);
+
+            // Check for column of 4
+            if (i < this.width * (this.width - 3) &&
+                this.squares[i + this.width].style.backgroundImage === color &&
+                this.squares[i + this.width * 2].style.backgroundImage === color &&
+                this.squares[i + this.width * 3].style.backgroundImage === color) {
+
+                const indices = [i, i + this.width, i + this.width * 2, i + this.width * 3];
+                indices.forEach(index => processedIndices.add(index));
+                this.squares[i].style.backgroundImage = 'url(images/bomb.png)'; // Create bomb
+                new Audio('sound-effects/bomb-created.mp3').play();
+                clearedIndices.add(i + this.width);
+                clearedIndices.add(i + this.width * 2);
+                clearedIndices.add(i + this.width * 3);
+                matchFound = true;
+                continue;
+            }
+
+            // Check for 2x2 square
+            if (i % this.width < this.width - 1 && i < this.width * (this.width - 1) &&
+                this.squares[i + 1].style.backgroundImage === color &&
+                this.squares[i + this.width].style.backgroundImage === color &&
+                this.squares[i + this.width + 1].style.backgroundImage === color) {
+
+                const indices = [i, i + 1, i + this.width, i + this.width + 1];
+                indices.forEach(index => processedIndices.add(index));
+                this.squares[i].style.backgroundImage = 'url(images/dynamite.png)'; // Create dynamite
+                new Audio('sound-effects/bomb-created.mp3').play();
+                clearedIndices.add(i + 1);
+                clearedIndices.add(i + this.width);
+                clearedIndices.add(i + this.width + 1);
+                matchFound = true;
+                continue;
             }
         }
 
-        if (matchedIndices.size > 0) {
+        // Now, check for matches of 3 on any remaining unprocessed squares
+        for (let i = 0; i < this.width * this.width; i++) {
+            if (processedIndices.has(i)) continue;
+
+            const color = this.squares[i].style.backgroundImage;
+            if (!color) continue;
+
+            // Check for row of 3
+            if (i % this.width <= this.width - 3 &&
+                this.squares[i + 1].style.backgroundImage === color &&
+                this.squares[i + 2].style.backgroundImage === color) {
+
+                const indices = [i, i + 1, i + 2];
+                indices.forEach(index => {
+                    clearedIndices.add(index);
+                    processedIndices.add(index);
+                });
+                matchFound = true;
+            }
+            // Check for column of 3
+            if (i < this.width * (this.width - 2) &&
+                this.squares[i + this.width].style.backgroundImage === color &&
+                this.squares[i + this.width * 2].style.backgroundImage === color) {
+
+                const indices = [i, i + this.width, i + this.width * 2];
+                indices.forEach(index => {
+                    clearedIndices.add(index);
+                    processedIndices.add(index);
+                });
+                matchFound = true;
+            }
+        }
+
+        // If any matches were found, clear the squares and update the score
+        if (clearedIndices.size > 0) {
             let candiesCollected = 0;
             const requiredColorUrl = `url("images/${this.levelConfiguration.candiesRequired[0]}.png")`;
-            matchedIndices.forEach(index => {
+
+            clearedIndices.forEach(index => {
                 if (this.squares[index].style.backgroundImage === requiredColorUrl) {
                     candiesCollected++;
                 }
@@ -456,7 +543,7 @@ class Game {
             return true;
         }
 
-        return false;
+        return matchFound; // Will be true if a special item was created but nothing was cleared yet
     }
 
     /**
@@ -506,9 +593,10 @@ class Game {
     // --- SPECIAL CANDY LOGIC ---
 
     /**
-     * Logic for a bomb candy, which clears the whole board.
+     * Logic for a bomb candy. It clears the board, pauses for visual effect,
+     * and then triggers the refill process.
      */
-    popBomb() {
+    async popBomb() {
         if (!this.levelConfiguration) return;
         new Audio('sound-effects/bomb-pop.mp3').play();
         this.movesAvailable--;
@@ -521,14 +609,20 @@ class Game {
             this.squares[i].style.backgroundImage = '';
         }
         this.handleScore(collected);
-        this.processBoardChanges(); // Process the board after clearing
+
+        // --- THE FIX ---
+        // Add a delay so the user can see the board clear before refilling.
+        await this.sleep(300);
+
+        this.processBoardChanges(); // Now start the refill process.
     }
 
     /**
-     * Logic for a dynamite candy, which clears a 3x3 area.
+     * Logic for a dynamite candy. It clears a 3x3 area, pauses for visual effect,
+     * and then triggers the refill process.
      * @param {number} centerId The index of the dynamite square.
      */
-    popDynamite(centerId) {
+    async popDynamite(centerId) {
         if (!this.levelConfiguration) return;
         new Audio('sound-effects/dynamite-pop.mp3').play();
         this.movesAvailable--;
@@ -549,7 +643,12 @@ class Game {
             }
         }
         this.handleScore(collected);
-        this.processBoardChanges(); // Process the board after clearing
+
+        // --- THE FIX ---
+        // Add a delay here as well for consistency.
+        await this.sleep(300);
+
+        this.processBoardChanges(); // Now start the refill process.
     }
 
     // --- UI & STATE MANAGEMENT ---
