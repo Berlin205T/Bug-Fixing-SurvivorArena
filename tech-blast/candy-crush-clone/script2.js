@@ -80,7 +80,7 @@ class Game {
      * This is the main entry point to start the game logic.
      */
     init() {
-        this.playButton?.addEventListener('click', this.play.bind(this));
+        this.playButton?.addEventListener('click', () => this.play());
         this.setUpBoard();
     }
 
@@ -190,15 +190,22 @@ class Game {
     // --- EVENT LISTENERS & HANDLING ---
 
     /**
-     * Attaches all necessary event listeners to the squares.
+     * Attaches all necessary event listeners to the squares for both mouse and touch.
      */
     addEventListeners() {
         this.squares.forEach(square => {
-            // Use one set of listeners for all squares and check type inside the handler
+            // Mouse Events
             square.addEventListener('dragstart', this.dragStart.bind(this));
             square.addEventListener('dragover', this.dragOver.bind(this));
             square.addEventListener('drop', this.dragDrop.bind(this));
             square.addEventListener('dragend', this.dragEnd.bind(this));
+
+            // Touch Events
+            square.addEventListener('touchstart', this.touchStart.bind(this), { passive: false });
+            square.addEventListener('touchmove', this.touchMove.bind(this), { passive: false });
+            square.addEventListener('touchend', this.touchEnd.bind(this));
+
+            // Click Events for special items
             square.addEventListener('click', this.handleClick.bind(this));
         });
     }
@@ -244,6 +251,53 @@ class Game {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    // --- TOUCH EVENT LOGIC ---
+
+    /** @param {TouchEvent} event */
+    touchStart(event) {
+        if (this.isBoardLocked) return;
+        // Prevents the page from scrolling when dragging on the game board
+        event.preventDefault();
+
+        const target = /** @type {HTMLDivElement} */ (event.target);
+        this.draggedSquareId = parseInt(target.id);
+        this.draggedCandy = this.squares[this.draggedSquareId].style.backgroundImage;
+        new Audio('sound-effects/pickup.mp3').play();
+    }
+
+    /** @param {TouchEvent} event */
+    touchMove(event) {
+        if (this.isBoardLocked) return;
+        event.preventDefault();
+
+        // Get the x, y coordinates of the finger
+        const touch = event.touches[0];
+        // Find what element is under the finger
+        const element = document.elementFromPoint(touch.clientX, touch.clientY);
+
+        if (element && element.classList.contains('square')) {
+            const targetSquareId = parseInt(element.id);
+            // Update the 'replaced' square ID as the finger moves over it
+            if (targetSquareId !== this.draggedSquareId) {
+                this.replacedSquareId = targetSquareId;
+            }
+        }
+    }
+
+    /** @param {TouchEvent} event */
+    touchEnd(event) {
+        if (this.isBoardLocked) return;
+
+        // Process the move based on the last square the finger was over
+        this.processMove();
+
+        // Reset state for the next move
+        this.draggedCandy = null;
+        this.draggedSquareId = null;
+        this.replacedCandy = null;
+        this.replacedSquareId = null;
+    }
+
 
     // --- DRAG & DROP LOGIC ---
 
@@ -272,9 +326,37 @@ class Game {
 
     /** @param {DragEvent} event */
     dragEnd(event) {
+        // The drop event has already set the replacedSquareId and replacedCandy
+        this.processMove();
+
+        // Reset state for the next move
+        this.draggedCandy = null;
+        this.draggedSquareId = null;
+        this.replacedCandy = null;
+        this.replacedSquareId = null;
+    }
+
+    /**
+     * Switches the background images of the dragged and replaced squares.
+     */
+    switchCandies() {
+        if (this.draggedSquareId === null || this.replacedSquareId === null) return;
+        // The check in dragEnd ensures dragged/replacedCandy are strings at this point.
+        this.squares[this.draggedSquareId].style.backgroundImage = this.replacedCandy ?? '';
+        this.squares[this.replacedSquareId].style.backgroundImage = this.draggedCandy ?? '';
+    }
+
+    /**
+     * A shared handler for validating and executing a move after it has been made
+     * either by mouse (dragEnd) or touch (touchEnd).
+     */
+    processMove() {
         if (this.isBoardLocked || this.draggedSquareId === null || this.replacedSquareId === null) {
             return;
         }
+
+        // We need to get the candy we are swapping with, as touch events don't have a 'drop' equivalent
+        this.replacedCandy = this.squares[this.replacedSquareId].style.backgroundImage;
 
         const validMoves = [
             this.draggedSquareId - 1,
@@ -294,29 +376,12 @@ class Game {
             this.processBoardChanges();
         } else {
             // Invalid move, revert visually
-            // FIX: Add guards to ensure these properties are not null before assignment.
             if (this.draggedCandy && this.replacedCandy) {
                 this.squares[this.draggedSquareId].style.backgroundImage = this.draggedCandy;
                 this.squares[this.replacedSquareId].style.backgroundImage = this.replacedCandy;
             }
             new Audio('sound-effects/drop.mp3').play();
         }
-
-        // Reset drag state
-        this.draggedCandy = null;
-        this.draggedSquareId = null;
-        this.replacedCandy = null;
-        this.replacedSquareId = null;
-    }
-
-    /**
-     * Switches the background images of the dragged and replaced squares.
-     */
-    switchCandies() {
-        if (this.draggedSquareId === null || this.replacedSquareId === null) return;
-        // The check in dragEnd ensures dragged/replacedCandy are strings at this point.
-        this.squares[this.draggedSquareId].style.backgroundImage = this.replacedCandy ?? '';
-        this.squares[this.replacedSquareId].style.backgroundImage = this.draggedCandy ?? '';
     }
 
 
