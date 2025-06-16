@@ -109,26 +109,26 @@ class Game {
         this.setUpBoard();
     }
 
-    /**
-     * Logs the current state of the board to the console in a readable grid format.
-     * @param {string} title A title for the log entry.
-     */
-    logBoardState(title) {
+    // /**
+    //  * Logs the current state of the board to the console in a readable grid format.
+    //  * @param {string} title A title for the log entry.
+    //  */
+    // logBoardState(title) {
 
-        const boardGrid = [];
-        for (let i = 0; i < this.width; i++) {
-            const row = [];
-            for (let j = 0; j < this.width; j++) {
-                const index = i * this.width + j;
-                const image = this.squares[index].style.backgroundImage;
-                // FIX: Handle the case where .pop() returns undefined by providing a default empty string.
-                row.push(image ? (image.split('/').pop() ?? '').replace('")', '').slice(0, 3) : '---');
-            }
-            boardGrid.push(row.join(' '));
-        }
+    //     const boardGrid = [];
+    //     for (let i = 0; i < this.width; i++) {
+    //         const row = [];
+    //         for (let j = 0; j < this.width; j++) {
+    //             const index = i * this.width + j;
+    //             const image = this.squares[index].style.backgroundImage;
+    //             // FIX: Handle the case where .pop() returns undefined by providing a default empty string.
+    //             row.push(image ? (image.split('/').pop() ?? '').replace('")', '').slice(0, 3) : '---');
+    //         }
+    //         boardGrid.push(row.join(' '));
+    //     }
 
 
-    }
+    // }
 
     // --- SETUP & INITIALIZATION ---
 
@@ -153,6 +153,8 @@ class Game {
      */
     play() {
         new Audio('sound-effects/start.mp3').play();
+        if (this.playButton)
+            this.playButton.style.display = 'none';
         this.isBoardLocked = false;
         this.currentLevel = 0;
         this.setLevel();
@@ -389,7 +391,7 @@ class Game {
      */
     async animateAndProcessSwap(id1, id2) {
 
-        this.logBoardState("Board State BEFORE Swap");
+        // this.logBoardState("Board State BEFORE Swap");
         // ... (rest of the function is the same, just keeping it for context)
         if (id2 < 0 || id2 >= this.width * this.width) return;
         const row1 = Math.floor(id1 / this.width);
@@ -422,7 +424,7 @@ class Game {
         square2.style.backgroundImage = candy1;
         square1.style.transform = '';
         square2.style.transform = '';
-        this.logBoardState("Board State AFTER Swap (before match check)");
+        // this.logBoardState("Board State AFTER Swap (before match check)");
 
         this.movesAvailable--;
         this.updateUI();
@@ -549,10 +551,6 @@ class Game {
      * @param {{indicesToClear: Set<number>, specialItemsToCreate: Array<{index: number, type: string}>}} matchData
      */
     handleMatches(matchData) {
-
-
-
-
         if (!this.levelConfiguration) return;
         let candiesCollected = 0;
         const requiredColorUrl = `url("images/${this.levelConfiguration.candiesRequired[0]}.png")`;
@@ -575,7 +573,7 @@ class Game {
         if (candiesCollected > 0) {
             this.handleScore(candiesCollected);
         }
-        this.logBoardState("Board State AFTER Matches Cleared");
+        // this.logBoardState("Board State AFTER Matches Cleared");
     }
 
     /**
@@ -687,7 +685,7 @@ class Game {
         // Add a micro-delay to allow the browser to render the final state before the next check
         await this.sleep(20);
 
-        this.logBoardState("Board State AFTER Gravity and Finalization");
+        // this.logBoardState("Board State AFTER Gravity and Finalization");
 
     }
 

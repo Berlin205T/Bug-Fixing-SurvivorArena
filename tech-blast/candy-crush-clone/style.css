@@ -18,20 +18,23 @@ body {
 #board {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
-  /* width: 584px; */
-  /* height: 584px; */
-  aspect-ratio: 1;
   background-color: rgba(73, 189, 27, 0.504);
   border-radius: 7px;
+  flex-shrink: 0;
   overflow: hidden; /* This is the new, crucial property */
+  box-sizing: border-box;
+  margin: 0em 2em 0em 2em;
 }
 
 #board .square {
   padding: 2px;
-  height: 65px;
-  width: 65px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  aspect-ratio: 1;
   background-repeat: no-repeat;
   background-color: rgba(244, 243, 243, 0.46);
+  background-size: cover;
   box-shadow: inset 0 0 6px #a1ae93;
   transition: transform 0.2s ease-in-out;
   touch-action: none; /* Prevents scrolling on touch devices */
@@ -39,60 +42,56 @@ body {
 
 #control-div {
 	display: flex;
-	flex-direction: column;
+	flex-direction: row;
+  margin-bottom: 2em;
+  margin-left: 2em;
+  box-sizing: border-box;
 }
 
 #button {
 	background-image: url('images/button.png');
-	height: 60px;
-	width: 110px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position-y: center;
+	height: 15em;
+	width: 25em;
 	cursor: pointer;
 	background-size: 100%;
-	margin-top: 375px;
-	margin-left: 26px;
+  pointer-events: auto;
 }
 
 #info-div {
-  width: 180px;
-  margin-left: 30px;
-  margin-top: 63px;
-  vertical-align: middle;
+  padding: 0.5em 1em 0.5em 1em;
   background-color: rgba(75, 137, 44, 0.46);
   box-shadow: inset 0 0 8px rgba(73, 189, 27, 0.2);
   border-radius: 7px;
-  padding-left: 15px;
-  padding-bottom: 20px;
 }
 
 #info-div p {
   font-family: Consolas;
+  font-size: 2em;
 	color: white;
 }
 
 .information-container {
 	display: flex;
 	flex-direction: row;
-	height: 35px;
 }
 
 .information-container p {
-	margin-left: 10px;
 	color: white;
 	font-size: larger;
+  line-height: 0;
 }
 
-#candies-div {
-	margin-top: 15px;
-	margin-left: 5px;
+/* #candies-div {
 }
 
 #candies-div p {
-	margin-top: 10px;
-}
+} */
 
 #candies {
-	margin-left: 10px;
-	margin-right: 10px;
+	margin-left: 0.5em;
 	color: white;
 	text-align: center;
 	justify-content: center;

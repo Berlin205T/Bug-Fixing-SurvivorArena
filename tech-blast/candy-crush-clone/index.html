@@ -10,32 +10,48 @@
 
 <body>
   <div id="content">
-    <div id="board"></div>
-    <div id="instructions">
-      <h2>Cara Bermain</h2>
-      <ul>
-        <li>Cocokkan 3 karakter untuk mendapatkan poin!</li>
-        <li>Geser karakter untuk membuat barisan horizontal atau vertikal. </li>
-        <li>Selesaikan misi untuk naik ke level berikutnya. </li>
-      </ul>
-      <div id="control-div">
-        <div id="info-div">
-          <div id="level-div" class="information-container">
-            <p id="level-p"></p>
-            <p id="level"></p>
+    <div style="
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+      ">
+      <div id="instructions">
+        <div id="control-div">
+          <div id="info-div">
+            <div id="level-div" class="information-container">
+              <p id="level-p">Tekan</p>
+              <p style="margin-left: 0.5em;" id="level">Start!</p>
+            </div>
+            <div id="moves-div" class="information-container">
+              <p id="moves-p">Untuk</p>
+              <p style="margin-left: 0.5em;" id="moves">memulai</p>
+            </div>
+            <div id="candies-div" class="information-container">
+              <div id="candy"></div>
+              <p id="candies-p">&nbsp;&nbsp;&nbsp;</p>
+              <p id="candies">Game</p>
+            </div>
           </div>
-          <div id="moves-div" class="information-container">
-            <p id="moves-p"></p>
-            <p id="moves"></p>
-          </div>
-          <div id="candies-div" class="information-container">
-            <div id="candy"></div>
-            <p id="candies-p"></p>
-            <p id="candies"></p>
-          </div>
+
         </div>
-        <div id="button"></div>
       </div>
+    </div>
+    <div style="flex: 1">
+      <div id="board"></div>
+    </div>
+    <div style="flex: 1"></div>
+    <div style="
+      position: absolute;
+      /* background-color: red; */
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    ">
+      <div id="button"></div>
     </div>
     <script src="levels.js"></script>
     <script src="script2.js"></script>
