@@ -1,3 +1,5 @@
+// @ts-check
+
 const width = 8
 
 const squares = []
@@ -25,9 +27,10 @@ let movesAvailable = 0
 let candiesLeft = 0
 
 let playButton = document.getElementById('button')
-playButton.addEventListener('click', play)
+if (playButton)
+  playButton.addEventListener('click', play)
 
-let draggedCandy 
+let draggedCandy
 let replacedCandy
 let draggedSquare
 let replacedSquare
@@ -36,7 +39,8 @@ let validMoves
 let intervalID
 
 function setUpBoard() {
-  for(let i = 0; i < 64; i++) {
+  console.log('[setUpBoard] called!')
+  for (let i = 0; i < 64; i++) {
     const square = document.createElement('div')
     square.className = 'square'
     let candyColorIndex = Math.floor(Math.random() * colors.length)
@@ -45,40 +49,44 @@ function setUpBoard() {
     square.setAttribute('id', i)
     board.appendChild(square)
     squares.push(square)
+
   }
 }
 
 function addEventListeners() {
+  console.log('[addEventListeners] called!')
   squares.forEach(square => {
-    if(square.style.backgroundImage != '' && !square.style.backgroundImage.includes('bomb') && !square.style.backgroundImage.includes('dynamite')) {
+    if (square.style.backgroundImage != '' && !square.style.backgroundImage.includes('bomb') && !square.style.backgroundImage.includes('dynamite')) {
       square.addEventListener('dragstart', dragStart)
       square.addEventListener('dragover', dragOver)
       square.addEventListener('drop', dragDrop)
       square.addEventListener('dragend', dragEnd)
-    } else if(square.style.backgroundImage.includes('bomb')) {
+    } else if (square.style.backgroundImage.includes('bomb')) {
       square.addEventListener('click', popBomb)
-    } else if(square.style.backgroundImage.includes('dynamite')) {
+    } else if (square.style.backgroundImage.includes('dynamite')) {
       square.addEventListener('click', popDynamite)
     }
   })
 }
 
 function removeEventListeners() {
+  console.log('[removeEventListeners] called!')
   squares.forEach(square => {
-    if(square.style.backgroundImage != '' && !square.style.backgroundImage.includes('bomb') && !square.style.backgroundImage.includes('dynamite')) {
+    if (square.style.backgroundImage != '' && !square.style.backgroundImage.includes('bomb') && !square.style.backgroundImage.includes('dynamite')) {
       square.removeEventListener('dragstart', dragStart)
       square.removeEventListener('dragover', dragOver)
       square.removeEventListener('drop', dragDrop)
       square.removeEventListener('dragend', dragEnd)
-    } else if(square.style.backgroundImage.includes('bomb')) {
+    } else if (square.style.backgroundImage.includes('bomb')) {
       square.removeEventListener('click', popBomb)
-    } else if(square.style.backgroundImage.includes('dynamite')) {
+    } else if (square.style.backgroundImage.includes('dynamite')) {
       square.removeEventListener('click', popDynamite)
     }
   })
 }
 
 function dragStart() {
+  console.log('[dragStart] called!')
   var audio = new Audio('sound-effects/pickup.mp3');
   audio.play();
   draggedCandy = this.style.backgroundImage
@@ -87,19 +95,22 @@ function dragStart() {
 }
 
 function dragOver(event) {
+  console.log('[dragOver] called!')
   event.preventDefault()
 }
 
 function dragDrop() {
+  console.log('[dragDrop] called!')
   replacedCandy = this.style.backgroundImage
   replacedSquare = parseInt(this.id)
-  if(validMove()) {
+  if (validMove()) {
     switchCandies()
   }
 }
 
 function dragEnd() {
-  if(replacedSquare && draggedSquare && validMove()) {
+  console.log('[dragEnd] called!')
+  if (replacedSquare && draggedSquare && validMove()) {
     replacedSquare = null
     replacedCandy = null
     validMoves = []
@@ -107,7 +118,7 @@ function dragEnd() {
     draggedCandy = null
     movesAvailable--
     movesInfo.innerText = movesAvailable
-  } else if(replacedSquare && draggedSquare && validMove() == false){
+  } else if (replacedSquare && draggedSquare && validMove() == false) {
     squares[draggedSquare].style.backgroundImage = draggedCandy
     squares[replacedSquare].style.backgroundImage = replacedCandy
     var audio = new Audio('sound-effects/drop.mp3')
@@ -120,13 +131,14 @@ function dragEnd() {
 }
 
 function popBomb() {
+  console.log('[popBomb] called!')
   var audio = new Audio('sound-effects/bomb-pop.mp3')
   audio.play()
   movesAvailable--
   movesInfo.innerText = movesAvailable
   let collected = 0
-  for(i = 0; i < 64; i++) {
-    if(squares[i].style.backgroundImage === requiredCandyImage.style.backgroundImage) {
+  for (i = 0; i < 64; i++) {
+    if (squares[i].style.backgroundImage === requiredCandyImage.style.backgroundImage) {
       collected += 1
     }
     squares[i].style.backgroundImage = ''
@@ -135,6 +147,7 @@ function popBomb() {
 }
 
 function popDynamite() {
+  console.log('[popDynamite] called!')
   var audio = new Audio('sound-effects/dynamite-pop.mp3')
   audio.play()
   movesAvailable--
@@ -142,44 +155,48 @@ function popDynamite() {
   let popAreaIDs = [parseInt(this.id) - 1, parseInt(this.id) + 1, parseInt(this.id) - width, parseInt(this.id) + width, parseInt(this.id)]
   let collected = 0
   squares.forEach(square => {
-    if(popAreaIDs.includes(parseInt(square.id))) {
-      if(square.style.backgroundImage === requiredCandyImage.style.backgroundImage) {
+    if (popAreaIDs.includes(parseInt(square.id))) {
+      if (square.style.backgroundImage === requiredCandyImage.style.backgroundImage) {
         collected += 1
       }
       square.style.backgroundImage = ''
     }
   })
   handleScore(collected)
-} 
+}
 
 function isSwitchingSpecial() {
+  console.log('[isSwitchingSpecial] called!')
   return (draggedCandy.includes('bomb') || draggedCandy.includes('dynamite') || replacedCandy.includes('bomb') || replacedCandy.includes('dynamite'))
 }
 
 function validMove() {
+  console.log('[validMove] called!')
   return (validMoves.includes(replacedSquare) && !isSwitchingSpecial())
 }
 
 function switchCandies() {
+  console.log('[switchCandies] called!')
   squares[draggedSquare].style.backgroundImage = replacedCandy
   squares[replacedSquare].style.backgroundImage = draggedCandy
 }
 
 function dropCandies() {
-  for(let i = 0; i < 56; i++) {
-    if(squares[i + width].style.backgroundImage == '') {
+  console.log('[dropCandies] called!')
+  for (let i = 0; i < 56; i++) {
+    if (squares[i + width].style.backgroundImage == '') {
       squares[i + width].style.backgroundImage = squares[i].style.backgroundImage
       squares[i].style.backgroundImage = ''
       const firstRow = [0, 1, 2, 3, 4, 5, 6, 7]
       const isInFirst = firstRow.includes(i)
-      if(isInFirst && squares[i].style.backgroundImage == '') {
+      if (isInFirst && squares[i].style.backgroundImage == '') {
         let newColorIndex = Math.floor(Math.random() * colors.length)
         squares[i].style.backgroundImage = colors[newColorIndex]
       }
     }
   }
-  for(let i = 0; i < 8; i++) {
-    if(squares[i].style.backgroundImage == '') {
+  for (let i = 0; i < 8; i++) {
+    if (squares[i].style.backgroundImage == '') {
       let newColorIndex = Math.floor(Math.random() * colors.length)
       squares[i].style.backgroundImage = colors[newColorIndex]
     }
@@ -187,12 +204,14 @@ function dropCandies() {
 }
 
 function clearBoard() {
-  for(let i = 0; i < 64; i++) {
+  console.log('[clearBoard] called!')
+  for (let i = 0; i < 64; i++) {
     squares[i].style.backgroundImage = ''
   }
 }
 
 function setLevel() {
+  console.log('[setLevel] called!')
   clearBoard()
   movesTitle.innerText = 'Moves: '
   levelTitle.innerText = 'Level: '
@@ -207,6 +226,7 @@ function setLevel() {
 }
 
 function levelUp() {
+  console.log('[levelUp] called!')
   candiesLeft = 0
   var audio = new Audio('sound-effects/level-up.mp3');
   audio.play();
@@ -215,7 +235,8 @@ function levelUp() {
 }
 
 function handleScore(candiesCollected) {
-  if(candiesLeft - candiesCollected <= 0) {
+  console.log('[handleScore] called!')
+  if (candiesLeft - candiesCollected <= 0) {
     levelUp()
   } else {
     candiesLeft -= candiesCollected
@@ -224,16 +245,17 @@ function handleScore(candiesCollected) {
 }
 
 function matchRowOfThree() {
+  console.log('[matchRowOfThree] called!')
   const invalid = [6, 7, 14, 15, 22, 23, 30, 31, 38, 39, 46, 47, 54, 55]
-  for(let i = 0; i < 61; i++) {
-    if(invalid.includes(i) == false) {
+  for (let i = 0; i < 61; i++) {
+    if (invalid.includes(i) == false) {
       let sequence = [i, i + 1, i + 2]
       let matchedColor = squares[i].style.backgroundImage
       const isEmpty = matchedColor == ''
-      if(!isEmpty && sequence.every(index => {
+      if (!isEmpty && sequence.every(index => {
         return squares[index].style.backgroundImage == matchedColor
       })) {
-        if(matchedColor === requiredCandyImage.style.backgroundImage) {
+        if (matchedColor === requiredCandyImage.style.backgroundImage) {
           handleScore(3)
         }
         sequence.forEach(index => {
@@ -247,20 +269,21 @@ function matchRowOfThree() {
 }
 
 function matchRowOfFour() {
+  console.log('[matchRowOfFour] called!')
   const invalid = [5, 6, 7, 13, 14, 15, 21, 22, 23, 29, 30, 31, 37, 38, 39, 45, 46, 47, 53, 54, 55]
-  for(let i = 0; i < 60; i++) {
-    if(invalid.includes(i) == false) {
+  for (let i = 0; i < 60; i++) {
+    if (invalid.includes(i) == false) {
       let sequence = [i, i + 1, i + 2, i + 3]
       let matchedColor = squares[i].style.backgroundImage
       const isEmpty = matchedColor == ''
-      if(!isEmpty && sequence.every(index => {
+      if (!isEmpty && sequence.every(index => {
         return squares[index].style.backgroundImage == matchedColor
       })) {
-        if(matchedColor === requiredCandyImage.style.backgroundImage) {
+        if (matchedColor === requiredCandyImage.style.backgroundImage) {
           handleScore(4)
         }
         sequence.forEach(index => {
-          if(index == i) {
+          if (index == i) {
             squares[index].style.backgroundImage = "url(images/bomb.png)"
             var audio = new Audio('sound-effects/bomb-created.mp3');
             audio.play();
@@ -276,14 +299,15 @@ function matchRowOfFour() {
 }
 
 function matchColumnOfThree() {
-  for(let i = 0; i < 47; i++) {
+  console.log('[matchColumnOfThree] called!')
+  for (let i = 0; i < 47; i++) {
     let sequence = [i, i + 8, i + 16]
     let matchedColor = squares[i].style.backgroundImage
     const isEmpty = matchedColor == ''
-    if(!isEmpty && sequence.every(index => {
+    if (!isEmpty && sequence.every(index => {
       return squares[index].style.backgroundImage == matchedColor
     })) {
-      if(matchedColor === requiredCandyImage.style.backgroundImage) {
+      if (matchedColor === requiredCandyImage.style.backgroundImage) {
         handleScore(3)
         candiesInfo.innerText = candiesLeft
       }
@@ -297,19 +321,20 @@ function matchColumnOfThree() {
 }
 
 function matchColumnOfFour() {
-  for(let i = 0; i < 39; i++) {
+  console.log('[matchColumnOfFour] called!')
+  for (let i = 0; i < 39; i++) {
     let sequence = [i, i + 8, i + 16, i + 24]
     let matchedColor = squares[i].style.backgroundImage
     const isEmpty = matchedColor == ''
-    if(!isEmpty && sequence.every(index => {
+    if (!isEmpty && sequence.every(index => {
       return squares[index].style.backgroundImage == matchedColor
     })) {
-      if(matchedColor === requiredCandyImage.style.backgroundImage) {
+      if (matchedColor === requiredCandyImage.style.backgroundImage) {
         handleScore(4)
         candiesInfo.innerText = candiesLeft
       }
       sequence.forEach(index => {
-        if(index == i) {
+        if (index == i) {
           squares[index].style.backgroundImage = "url(images/bomb.png)"
           var audio = new Audio('sound-effects/bomb-created.mp3');
           audio.play();
@@ -324,21 +349,22 @@ function matchColumnOfFour() {
 }
 
 function matchSquareOfFour() {
+  console.log('[matchSquareOfFour] called!')
   const invalid = [7, 15, 23, 31, 39, 47]
-  for(let i = 0; i < 55; i++) {
-    if(!invalid.includes(i)) {
+  for (let i = 0; i < 55; i++) {
+    if (!invalid.includes(i)) {
       let sequence = [i, i + 1, i + 8, i + 9]
       let matchedColor = squares[i].style.backgroundImage
       const isEmpty = matchedColor == ''
-      if(!isEmpty && sequence.every(index => {
+      if (!isEmpty && sequence.every(index => {
         return squares[index].style.backgroundImage == matchedColor
       })) {
-        if(matchedColor === requiredCandyImage.style.backgroundImage) {
+        if (matchedColor === requiredCandyImage.style.backgroundImage) {
           handleScore(4)
           candiesInfo.innerText = candiesLeft
         }
         sequence.forEach(index => {
-          if(index == i) {
+          if (index == i) {
             squares[index].style.backgroundImage = "url(images/dynamite.png)"
             var audio = new Audio('sound-effects/bomb-created.mp3');
             audio.play();
@@ -354,6 +380,7 @@ function matchSquareOfFour() {
 }
 
 function matchCandies() {
+  console.log('[matchCandies] called!')
   matchSquareOfFour()
   matchRowOfFour()
   matchColumnOfFour()
@@ -362,12 +389,14 @@ function matchCandies() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('[DOMContentLoaded] called!')
   setUpBoard()
 })
 
 function setRequiredCandyImage() {
+  console.log('[setRequiredCandyImage] called!')
   colors.forEach(color => {
-    if(color.includes(levelConfiguration.candiesRequired[0])) {
+    if (color.includes(levelConfiguration.candiesRequired[0])) {
       requiredCandyImage.style.backgroundImage = color
       return
     }
@@ -375,18 +404,20 @@ function setRequiredCandyImage() {
 }
 
 function clearScoreBoard() {
+  console.log('[clearScoreBoard] called!')
   currentLevel = 0
   levelTitle.innerText = ''
   levelInfo.innerText = ''
   movesTitle.innerText = ''
-  movesInfo.innerText = '' 
+  movesInfo.innerText = ''
   requiredCandyImage.style.backgroundImage = ''
   candiesTimes.innerText = ''
   candiesInfo.innerText = ''
 }
 
 function checkGameOver() {
-  if(movesAvailable == 0) {
+  console.log('[checkGameOver] called!')
+  if (movesAvailable == 0) {
     var audio = new Audio('sound-effects/game-over.mp3');
     audio.play();
     clearInterval(intervalID)
@@ -396,6 +427,7 @@ function checkGameOver() {
 }
 
 function play() {
+  console.log('[play] called!')
   var audio = new Audio('sound-effects/start.mp3');
   audio.play();
   currentLevel = 0
@@ -403,13 +435,13 @@ function play() {
   addEventListeners()
   dropCandies()
   matchCandies()
-  intervalID = window.setInterval(function() {
+  intervalID = window.setInterval(function () {
     removeEventListeners()
     addEventListeners()
     dropCandies()
     matchCandies()
     checkGameOver()
-    }, 100
+  }, 100
   )
 }
 
