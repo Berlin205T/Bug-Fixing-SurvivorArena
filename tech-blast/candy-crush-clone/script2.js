@@ -1,5 +1,49 @@
 // @ts-check
 
+const MpPostMessage = /** @type {Window & { MpPostMessage?: (event: string, data: any) => void }} */
+    (window).MpPostMessage;
+
+const webviewSignalStartRound = () => {
+    // log('webviewSignalStartRound')
+    MpPostMessage?.('gameState', {
+        type: 'startRound'
+    });
+}
+
+/**
+ * @param {boolean} win 
+ * @param {number} score 
+ */
+const webviewSignalEndRound = (win, score) => {
+    // log(`webviewSignalEndRound ${win} ${score}`)
+    MpPostMessage?.('gameState', {
+        type: 'endRound',
+        win,
+        score
+    });
+}
+
+/**
+ * 
+ * @param {*} lastWin 
+ * @param {*} lastScore 
+ */
+const webviewSignalExit = (lastWin, lastScore) => {
+    // log(`webviewSignalExit ${lastWin} ${lastScore}`)
+    MpPostMessage?.('gameState', {
+        type: 'exit',
+        lastWin,
+        lastScore
+    })
+}
+
+const webviewSignalLaunch = () => {
+    // log(`webviewSignalLaunch`)
+    MpPostMessage?.('gameState', {
+        type: 'launch'
+    });
+}
+
 /**
  * Represents the main game engine for the Match-3 game.
  * It encapsulates all game state, DOM elements, and logic.
@@ -67,6 +111,8 @@ class Game {
         this.startX = 0;
         /** @type {number} The starting Y coordinate of the swipe. */
         this.startY = 0;
+
+        webviewSignalLaunch();
     }
 
     /**
