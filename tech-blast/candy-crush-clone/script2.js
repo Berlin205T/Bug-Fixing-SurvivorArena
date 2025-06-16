@@ -80,7 +80,8 @@ class Game {
         const candyIndex = Math.floor(Math.random() * this.colors.length);
         const requiredCandyUrl = this.colors[candyIndex];
         // Extract the name (e.g., 'pig') from the URL 'url(images/pig.png)'
-        const requiredCandyName = requiredCandyUrl.split('/').pop().replace('.png)', '');
+        // FIX: Handle the case where .pop() returns undefined by providing a default empty string.
+        const requiredCandyName = (requiredCandyUrl.split('/').pop() || '').replace('.png)', '');
 
         // 2. Calculate the number of candies required. This increases as levels go up.
         // Starts at 20 and increases by 3 for each level the player has completed.
@@ -90,10 +91,8 @@ class Game {
         // A simple formula: a base amount of moves plus extra moves proportional to the goal.
         // We assume a player needs about 1 move to clear 1.5 required candies on average
         // (this accounts for cascades, setup moves, and clearing non-required candies).
-        // We add a base of 15 moves to ensure very low-requirement levels aren't impossible.
-        const movesAllowed = 15 + Math.ceil(candiesRequiredCount / 1.5);
-
-        console.log(`---\nGenerated Level ${levelIndex + 1}: Collect ${candiesRequiredCount} ${requiredCandyName}s in ${movesAllowed} moves.\n---`);
+        // We add a base of 25 moves to ensure very low-requirement levels aren't impossible.
+        const movesAllowed = 25 + Math.ceil(candiesRequiredCount / 1.5);
 
         return {
             movesAllowed: movesAllowed,
@@ -115,19 +114,20 @@ class Game {
      * @param {string} title A title for the log entry.
      */
     logBoardState(title) {
-        console.log(`--- ${title} ---`);
+
         const boardGrid = [];
         for (let i = 0; i < this.width; i++) {
             const row = [];
             for (let j = 0; j < this.width; j++) {
                 const index = i * this.width + j;
                 const image = this.squares[index].style.backgroundImage;
-                row.push(image ? image.split('/').pop().replace('")', '').slice(0, 3) : '---');
+                // FIX: Handle the case where .pop() returns undefined by providing a default empty string.
+                row.push(image ? (image.split('/').pop() ?? '').replace('")', '').slice(0, 3) : '---');
             }
             boardGrid.push(row.join(' '));
         }
-        console.log(boardGrid.join('\n'));
-        console.log(`--- End of State ---`);
+
+
     }
 
     // --- SETUP & INITIALIZATION ---
@@ -388,7 +388,7 @@ class Game {
      * @param {number} id2 The ID of the second square.
      */
     async animateAndProcessSwap(id1, id2) {
-        console.log(`[SWAP] User initiated swap between square ${id1} and ${id2}`);
+
         this.logBoardState("Board State BEFORE Swap");
         // ... (rest of the function is the same, just keeping it for context)
         if (id2 < 0 || id2 >= this.width * this.width) return;
@@ -437,12 +437,12 @@ class Game {
      * It continues as long as there are matches to clear OR empty squares to fill.
      */
     async processBoardChanges() {
-        console.log(`[LOOP] --- Starting new processBoardChanges cycle ---`);
+
         this.isBoardLocked = true;
 
         let cycleCount = 1;
         while (true) {
-            console.log(`[LOOP] Cycle #${cycleCount}: Finding all matches.`);
+
             const matchData = this.findAllMatches();
 
             // --- THE FIX ---
@@ -451,7 +451,7 @@ class Game {
 
             // The loop should continue if there are matches to process OR empty squares to fill.
             if (matchData.indicesToClear.size > 0 || hasEmptySquares) {
-                console.log(`[LOOP] Cycle #${cycleCount}: Board is unstable. Processing changes.`);
+
 
                 // Only handle score/special items if there was an actual match.
                 if (matchData.indicesToClear.size > 0) {
@@ -462,20 +462,20 @@ class Game {
 
                 // ALWAYS run gravity if the board is unstable. This will now fill
                 // holes from both matches and special item explosions.
-                console.log(`[LOOP] Cycle #${cycleCount}: Calling animateGravity.`);
+
                 await this.animateGravity();
 
                 // Loop again to check for cascades.
                 cycleCount++;
             } else {
                 // If there are no matches AND no empty squares, the board is stable.
-                console.log(`[LOOP] Cycle #${cycleCount}: No matches found and no empty squares. Board is stable.`);
+
                 break;
             }
         }
 
         this.isBoardLocked = false;
-        console.log(`[LOOP] --- processBoardChanges cycle complete. Board unlocked. ---`);
+
         this.checkGameOver();
     }
 
@@ -485,6 +485,8 @@ class Game {
      * @returns {{indicesToClear: Set<number>, specialItemsToCreate: Array<{index: number, type: string}>}}
      */
     findAllMatches() {
+        // FIX: Add a JSDoc type annotation to prevent TypeScript from inferring `specialItemsToCreate` as `never[]`.
+        /** @type {{indicesToClear: Set<number>, specialItemsToCreate: Array<{index: number, type: string}>}} */
         const matchData = {
             indicesToClear: new Set(),
             specialItemsToCreate: []
@@ -547,9 +549,9 @@ class Game {
      * @param {{indicesToClear: Set<number>, specialItemsToCreate: Array<{index: number, type: string}>}} matchData
      */
     handleMatches(matchData) {
-        console.log(`[HANDLE] Executing match plan.`);
-        console.log(`[HANDLE] Special items to create:`, matchData.specialItemsToCreate);
-        console.log(`[HANDLE] Indices to clear:`, [...matchData.indicesToClear]);
+
+
+
 
         if (!this.levelConfiguration) return;
         let candiesCollected = 0;
@@ -582,12 +584,12 @@ class Game {
      * corruption and visual bugs.
      */
     async animateGravity() {
-        console.log(`[GRAVITY] --- Starting animateGravity ---`);
+
         const animationDuration = 300;
         const promises = [];
         // A pristine, read-only copy of the board's state BEFORE animations are planned.
         const initialBoardImages = this.squares.map(s => s.style.backgroundImage);
-        console.log('[GRAVITY] Captured initial board state for planning.');
+
         // The master plan for what the board will look like after everything is done.
         const finalBoardState = Array(this.width * this.width).fill(null);
 
@@ -613,7 +615,7 @@ class Game {
                 finalBoardState[toIndex] = image;
             });
         }
-        console.log(`[GRAVITY] Master plan for final board state has been created.`);
+
 
 
         // --- PHASE 2: ANIMATE --- (Modified)
@@ -638,7 +640,7 @@ class Game {
 
                 if (fallDistance > 0) {
                     const squareToAnimate = this.squares[fromIndex];
-                    console.log(`[GRAVITY Col ${col}] Animating candy from ${fromIndex} to fall ${fallDistance} rows.`);
+
                     squareToAnimate.style.transition = `transform ${animationDuration}ms ease-in`;
                     squareToAnimate.style.transform = `translateY(${fallDistance * squareToAnimate.offsetHeight}px)`;
                     promises.push(this.sleep(animationDuration));
@@ -648,7 +650,7 @@ class Game {
             for (let i = 0; i < emptySlots; i++) {
                 const toIndex = i * this.width + col;
                 const square = this.squares[toIndex];
-                console.log(`[GRAVITY Col ${col}] Animating NEW candy dropping into index ${toIndex}`);
+
                 // ***** FIX: DO NOT SET THE BACKGROUND IMAGE HERE *****
                 // The square will be visually empty as it drops, which is fine.
                 // It will get its image in the Finalize phase.
@@ -665,7 +667,7 @@ class Game {
             }
         }
 
-        console.log(`[GRAVITY] Waiting for ${promises.length} animation promises...`);
+
         // Wait for the longest animation to complete.
         if (promises.length > 0) {
             await this.sleep(animationDuration + 100);
@@ -673,7 +675,7 @@ class Game {
 
 
         // --- PHASE 3: FINALIZE ---
-        console.log(`[GRAVITY] --- Finalizing Board State ---`);
+
         this.squares.forEach((square, i) => {
             // Reset all transforms and transitions first to prevent visual glitches.
             square.style.transition = 'none';
@@ -686,7 +688,7 @@ class Game {
         await this.sleep(20);
 
         this.logBoardState("Board State AFTER Gravity and Finalization");
-        console.log(`[GRAVITY] --- animateGravity Complete ---`);
+
     }
 
     // --- SPECIAL CANDY LOGIC ---
@@ -778,7 +780,7 @@ class Game {
             if (this.movesInfo) {
                 this.movesInfo.innerText = "GAME OVER";
             }
-            console.log("Game Over!");
+
         }
     }
 

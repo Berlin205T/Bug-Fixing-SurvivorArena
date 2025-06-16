@@ -39,7 +39,7 @@ let validMoves
 let intervalID
 
 function setUpBoard() {
-  console.log('[setUpBoard] called!')
+
   for (let i = 0; i < 64; i++) {
     const square = document.createElement('div')
     square.className = 'square'
@@ -54,7 +54,7 @@ function setUpBoard() {
 }
 
 function addEventListeners() {
-  console.log('[addEventListeners] called!')
+
   squares.forEach(square => {
     if (square.style.backgroundImage != '' && !square.style.backgroundImage.includes('bomb') && !square.style.backgroundImage.includes('dynamite')) {
       square.addEventListener('dragstart', dragStart)
@@ -70,7 +70,7 @@ function addEventListeners() {
 }
 
 function removeEventListeners() {
-  console.log('[removeEventListeners] called!')
+
   squares.forEach(square => {
     if (square.style.backgroundImage != '' && !square.style.backgroundImage.includes('bomb') && !square.style.backgroundImage.includes('dynamite')) {
       square.removeEventListener('dragstart', dragStart)
@@ -86,7 +86,7 @@ function removeEventListeners() {
 }
 
 function dragStart() {
-  console.log('[dragStart] called!')
+
   var audio = new Audio('sound-effects/pickup.mp3');
   audio.play();
   draggedCandy = this.style.backgroundImage
@@ -95,12 +95,12 @@ function dragStart() {
 }
 
 function dragOver(event) {
-  console.log('[dragOver] called!')
+
   event.preventDefault()
 }
 
 function dragDrop() {
-  console.log('[dragDrop] called!')
+
   replacedCandy = this.style.backgroundImage
   replacedSquare = parseInt(this.id)
   if (validMove()) {
@@ -109,7 +109,7 @@ function dragDrop() {
 }
 
 function dragEnd() {
-  console.log('[dragEnd] called!')
+
   if (replacedSquare && draggedSquare && validMove()) {
     replacedSquare = null
     replacedCandy = null
@@ -131,7 +131,7 @@ function dragEnd() {
 }
 
 function popBomb() {
-  console.log('[popBomb] called!')
+
   var audio = new Audio('sound-effects/bomb-pop.mp3')
   audio.play()
   movesAvailable--
@@ -147,7 +147,7 @@ function popBomb() {
 }
 
 function popDynamite() {
-  console.log('[popDynamite] called!')
+
   var audio = new Audio('sound-effects/dynamite-pop.mp3')
   audio.play()
   movesAvailable--
@@ -166,23 +166,23 @@ function popDynamite() {
 }
 
 function isSwitchingSpecial() {
-  console.log('[isSwitchingSpecial] called!')
+
   return (draggedCandy.includes('bomb') || draggedCandy.includes('dynamite') || replacedCandy.includes('bomb') || replacedCandy.includes('dynamite'))
 }
 
 function validMove() {
-  console.log('[validMove] called!')
+
   return (validMoves.includes(replacedSquare) && !isSwitchingSpecial())
 }
 
 function switchCandies() {
-  console.log('[switchCandies] called!')
+
   squares[draggedSquare].style.backgroundImage = replacedCandy
   squares[replacedSquare].style.backgroundImage = draggedCandy
 }
 
 function dropCandies() {
-  console.log('[dropCandies] called!')
+
   for (let i = 0; i < 56; i++) {
     if (squares[i + width].style.backgroundImage == '') {
       squares[i + width].style.backgroundImage = squares[i].style.backgroundImage
@@ -204,14 +204,14 @@ function dropCandies() {
 }
 
 function clearBoard() {
-  console.log('[clearBoard] called!')
+
   for (let i = 0; i < 64; i++) {
     squares[i].style.backgroundImage = ''
   }
 }
 
 function setLevel() {
-  console.log('[setLevel] called!')
+
   clearBoard()
   movesTitle.innerText = 'Moves: '
   levelTitle.innerText = 'Level: '
@@ -226,7 +226,7 @@ function setLevel() {
 }
 
 function levelUp() {
-  console.log('[levelUp] called!')
+
   candiesLeft = 0
   var audio = new Audio('sound-effects/level-up.mp3');
   audio.play();
@@ -235,7 +235,7 @@ function levelUp() {
 }
 
 function handleScore(candiesCollected) {
-  console.log('[handleScore] called!')
+
   if (candiesLeft - candiesCollected <= 0) {
     levelUp()
   } else {
@@ -245,7 +245,7 @@ function handleScore(candiesCollected) {
 }
 
 function matchRowOfThree() {
-  console.log('[matchRowOfThree] called!')
+
   const invalid = [6, 7, 14, 15, 22, 23, 30, 31, 38, 39, 46, 47, 54, 55]
   for (let i = 0; i < 61; i++) {
     if (invalid.includes(i) == false) {
@@ -269,7 +269,7 @@ function matchRowOfThree() {
 }
 
 function matchRowOfFour() {
-  console.log('[matchRowOfFour] called!')
+
   const invalid = [5, 6, 7, 13, 14, 15, 21, 22, 23, 29, 30, 31, 37, 38, 39, 45, 46, 47, 53, 54, 55]
   for (let i = 0; i < 60; i++) {
     if (invalid.includes(i) == false) {
@@ -299,7 +299,7 @@ function matchRowOfFour() {
 }
 
 function matchColumnOfThree() {
-  console.log('[matchColumnOfThree] called!')
+
   for (let i = 0; i < 47; i++) {
     let sequence = [i, i + 8, i + 16]
     let matchedColor = squares[i].style.backgroundImage
@@ -321,7 +321,7 @@ function matchColumnOfThree() {
 }
 
 function matchColumnOfFour() {
-  console.log('[matchColumnOfFour] called!')
+
   for (let i = 0; i < 39; i++) {
     let sequence = [i, i + 8, i + 16, i + 24]
     let matchedColor = squares[i].style.backgroundImage
@@ -349,7 +349,7 @@ function matchColumnOfFour() {
 }
 
 function matchSquareOfFour() {
-  console.log('[matchSquareOfFour] called!')
+
   const invalid = [7, 15, 23, 31, 39, 47]
   for (let i = 0; i < 55; i++) {
     if (!invalid.includes(i)) {
@@ -380,7 +380,7 @@ function matchSquareOfFour() {
 }
 
 function matchCandies() {
-  console.log('[matchCandies] called!')
+
   matchSquareOfFour()
   matchRowOfFour()
   matchColumnOfFour()
@@ -389,12 +389,12 @@ function matchCandies() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('[DOMContentLoaded] called!')
+
   setUpBoard()
 })
 
 function setRequiredCandyImage() {
-  console.log('[setRequiredCandyImage] called!')
+
   colors.forEach(color => {
     if (color.includes(levelConfiguration.candiesRequired[0])) {
       requiredCandyImage.style.backgroundImage = color
@@ -404,7 +404,7 @@ function setRequiredCandyImage() {
 }
 
 function clearScoreBoard() {
-  console.log('[clearScoreBoard] called!')
+
   currentLevel = 0
   levelTitle.innerText = ''
   levelInfo.innerText = ''
@@ -416,7 +416,7 @@ function clearScoreBoard() {
 }
 
 function checkGameOver() {
-  console.log('[checkGameOver] called!')
+
   if (movesAvailable == 0) {
     var audio = new Audio('sound-effects/game-over.mp3');
     audio.play();
@@ -427,7 +427,7 @@ function checkGameOver() {
 }
 
 function play() {
-  console.log('[play] called!')
+
   var audio = new Audio('sound-effects/start.mp3');
   audio.play();
   currentLevel = 0
