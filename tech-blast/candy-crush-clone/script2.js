@@ -21,12 +21,6 @@ class Game {
             'url(images/bumblebee.png)',
             'url(images/bear.png)'
         ];
-        /** @type {object[]} Configuration for each level. */
-        this.levels = [
-            { movesAllowed: 40, candiesRequired: ['pig', 25] },
-            { movesAllowed: 30, candiesRequired: ['cow', 20] },
-            { movesAllowed: 30, candiesRequired: ['mouse', 30] }
-        ];
 
         // --- DOM Elements ---
         /** @type {HTMLElement | null} The main game board container. */
@@ -73,6 +67,38 @@ class Game {
         this.startX = 0;
         /** @type {number} The starting Y coordinate of the swipe. */
         this.startY = 0;
+    }
+
+    /**
+     * Generates a new, random level configuration.
+     * The difficulty scales with the level number.
+     * @param {number} levelIndex The current level index (0-based).
+     * @returns {{movesAllowed: number, candiesRequired: [string, number]}} The configuration for the new level.
+     */
+    generateRandomLevel(levelIndex) {
+        // 1. Pick a random candy for the objective.
+        const candyIndex = Math.floor(Math.random() * this.colors.length);
+        const requiredCandyUrl = this.colors[candyIndex];
+        // Extract the name (e.g., 'pig') from the URL 'url(images/pig.png)'
+        const requiredCandyName = requiredCandyUrl.split('/').pop().replace('.png)', '');
+
+        // 2. Calculate the number of candies required. This increases as levels go up.
+        // Starts at 20 and increases by 3 for each level the player has completed.
+        const candiesRequiredCount = 20 + (levelIndex * 3);
+
+        // 3. Calculate a fair number of moves. This is the most important part.
+        // A simple formula: a base amount of moves plus extra moves proportional to the goal.
+        // We assume a player needs about 1 move to clear 1.5 required candies on average
+        // (this accounts for cascades, setup moves, and clearing non-required candies).
+        // We add a base of 15 moves to ensure very low-requirement levels aren't impossible.
+        const movesAllowed = 15 + Math.ceil(candiesRequiredCount / 1.5);
+
+        console.log(`---\nGenerated Level ${levelIndex + 1}: Collect ${candiesRequiredCount} ${requiredCandyName}s in ${movesAllowed} moves.\n---`);
+
+        return {
+            movesAllowed: movesAllowed,
+            candiesRequired: [requiredCandyName, candiesRequiredCount]
+        };
     }
 
     /**
@@ -165,9 +191,11 @@ class Game {
      * Ensures the generated board has no initial matches.
      */
     setLevel() {
-        this.levelConfiguration = this.levels[this.currentLevel];
+        // This is the main change: Generate a level instead of looking it up.
+        this.levelConfiguration = this.generateRandomLevel(this.currentLevel);
+
         if (!this.levelConfiguration) {
-            console.error("Level configuration not found for level:", this.currentLevel);
+            console.error("Failed to generate a level configuration for level:", this.currentLevel);
             return;
         }
         this.movesAvailable = this.levelConfiguration.movesAllowed;
@@ -183,9 +211,6 @@ class Game {
         } while (this.hasInitialMatches());
 
         this.addEventListeners();
-
-        // DO NOT process board changes here. The game should start with a stable board.
-        // The first call to processBoardChanges() will happen after the player's first valid move.
     }
 
     /**
@@ -203,7 +228,8 @@ class Game {
      */
     levelUp() {
         new Audio('sound-effects/level-up.mp3').play();
-        this.currentLevel = (this.currentLevel + 1) % this.levels.length; // Loop back to level 1 if all are completed
+        // The old code looped back to level 1. The new code increments forever.
+        this.currentLevel++;
         this.setLevel();
     }
 
@@ -408,6 +434,7 @@ class Game {
     /**
      * The main game loop. It now orchestrates the entire cycle of checking for matches,
      * clearing them, animating gravity, and then re-checking for cascading matches.
+     * It continues as long as there are matches to clear OR empty squares to fill.
      */
     async processBoardChanges() {
         console.log(`[LOOP] --- Starting new processBoardChanges cycle ---`);
@@ -416,27 +443,33 @@ class Game {
         let cycleCount = 1;
         while (true) {
             console.log(`[LOOP] Cycle #${cycleCount}: Finding all matches.`);
-            // Find all matches on the current board without changing it yet.
             const matchData = this.findAllMatches();
 
-            if (matchData.indicesToClear.size > 0) {
-                console.log(`[LOOP] Cycle #${cycleCount}: Matches found. Indices to clear:`, [...matchData.indicesToClear]);
-                new Audio('sound-effects/match1.mp3').play();
+            // --- THE FIX ---
+            // We must also check for empty squares left by bombs/dynamite.
+            const hasEmptySquares = this.squares.some(s => s.style.backgroundImage === '');
 
-                // Now, handle the matches: update score, create special items, and clear squares.
-                this.handleMatches(matchData);
+            // The loop should continue if there are matches to process OR empty squares to fill.
+            if (matchData.indicesToClear.size > 0 || hasEmptySquares) {
+                console.log(`[LOOP] Cycle #${cycleCount}: Board is unstable. Processing changes.`);
 
-                // Wait for a moment so the user can see what was cleared.
-                await this.sleep(200);
+                // Only handle score/special items if there was an actual match.
+                if (matchData.indicesToClear.size > 0) {
+                    new Audio('sound-effects/match1.mp3').play();
+                    this.handleMatches(matchData);
+                    await this.sleep(200); // Wait for user to see the cleared match.
+                }
 
+                // ALWAYS run gravity if the board is unstable. This will now fill
+                // holes from both matches and special item explosions.
                 console.log(`[LOOP] Cycle #${cycleCount}: Calling animateGravity.`);
                 await this.animateGravity();
 
                 // Loop again to check for cascades.
                 cycleCount++;
             } else {
-                // If no matches were found, the board is stable. We can exit the loop.
-                console.log(`[LOOP] Cycle #${cycleCount}: No matches found. Board is stable.`);
+                // If there are no matches AND no empty squares, the board is stable.
+                console.log(`[LOOP] Cycle #${cycleCount}: No matches found and no empty squares. Board is stable.`);
                 break;
             }
         }
