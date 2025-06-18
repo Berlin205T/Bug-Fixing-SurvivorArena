@@ -85,7 +85,16 @@ class Game {
         this.levelTitle = document.getElementById('level-p');
         /** @type {HTMLElement | null} */
         this.candiesTimes = document.getElementById('candies-p');
-
+        /** @type {HTMLElement | null} */
+        this.resultDialogContainer = document.querySelector('#resultDialogContainer');
+        /** @type {HTMLElement | null} */
+        this.resultHeaderText = document.querySelector('#resultDialogContainer #headerText');
+        /** @type {HTMLElement | null} */
+        this.resultScoreText = document.querySelector('#resultDialogContainer #scoreText');
+        /** @type {HTMLElement | null} */
+        this.resultRestartBtn = document.querySelector('#resultDialogContainer #restartBtn');
+        /** @type {HTMLElement | null} */
+        this.resultExitBtn = document.querySelector('#resultDialogContainer #exitBtn');
 
         // --- Game State ---
         /** @type {HTMLDivElement[]} An array holding all the square div elements. */
@@ -100,7 +109,8 @@ class Game {
         this.candiesLeft = 0;
         /** @type {boolean} A flag to prevent player interaction during animations. */
         this.isBoardLocked = true;
-
+        /** @type {number} The current score of the player. */
+        this.score = 0;
 
         // --- Swipe Interaction State ---
         /** @type {boolean} Flag to indicate if a swipe is in progress. */
@@ -113,6 +123,63 @@ class Game {
         this.startY = 0;
 
         webviewSignalLaunch();
+    }
+
+    /**
+     * Sets up the result dialog with the provided parameters and displays it.
+     * @param {string} headerText
+     * @param {number} score
+     * @param {boolean} isWon
+     * @param {string} restartLabel
+     * @param {() => void} onRestartPress
+     * @param {() => void} onExitPress
+     * @returns {void}
+     */
+    setupAndShowResultDialog(headerText, score, isWon, restartLabel, onRestartPress, onExitPress) {
+        const container = this.resultDialogContainer;
+        const header = this.resultHeaderText;
+        const scoreText = this.resultScoreText;
+        const restartBtn = this.resultRestartBtn;
+        const exitBtn = this.resultExitBtn;
+
+        if (!container || !header || !scoreText || !restartBtn || !exitBtn) {
+            console.error('Result dialog elements not found');
+            return;
+        }
+
+        webviewSignalEndRound(isWon, score);
+
+        header.textContent = headerText;
+        scoreText.textContent = `Score: ${score}`;
+        restartBtn.textContent = restartLabel;
+
+        //remove all event listeners from the button first
+        const newRestartBtn = (restartBtn.cloneNode(true));
+        const newExitBtn = (exitBtn.cloneNode(true));
+
+        newRestartBtn.textContent = restartLabel;
+        newRestartBtn.addEventListener('pointerdown', () => {
+            onRestartPress();
+            container.style.display = 'none';
+            webviewSignalStartRound();
+        })
+
+        newExitBtn.addEventListener('pointerdown', () => {
+            onExitPress();
+            container.style.display = 'none';
+            webviewSignalExit(isWon, score);
+        })
+
+        if (this.resultRestartBtn && this.resultExitBtn) {
+            this.resultRestartBtn.replaceWith(newRestartBtn);
+            this.resultExitBtn.replaceWith(newExitBtn);
+        }
+
+        this.isBoardLocked = true;
+        this.removeEventListeners();
+
+        // Show the dialog
+        container.style.display = 'flex';
     }
 
     /**
@@ -258,6 +325,7 @@ class Game {
             this.fillBoardWithRandomCandies();
         } while (this.hasInitialMatches());
 
+        webviewSignalStartRound();
         this.addEventListeners();
     }
 
@@ -277,8 +345,20 @@ class Game {
     levelUp() {
         new Audio('sound-effects/level-up.mp3').play();
         // The old code looped back to level 1. The new code increments forever.
-        this.currentLevel++;
-        this.setLevel();
+        this.setupAndShowResultDialog(
+            "Lanjut terus!",
+            this.score,
+            true,
+            "Level berikut",
+            () => {
+                this.score = 0;
+                this.currentLevel++;
+                this.setLevel();
+            },
+            () => {
+                // do nothing
+            }
+        )
     }
 
     // --- EVENT LISTENERS & HANDLING ---
@@ -805,6 +885,7 @@ class Game {
     handleScore(candiesCollected) {
         this.candiesLeft = Math.max(0, this.candiesLeft - candiesCollected);
         this.updateUI();
+        this.score += candiesCollected;
 
         if (this.candiesLeft === 0) {
             this.isBoardLocked = true; // Lock board before level up
@@ -820,11 +901,26 @@ class Game {
             new Audio('sound-effects/game-over.mp3').play();
             this.isBoardLocked = true;
             this.removeEventListeners();
+
             // Optional: Show a 'Game Over' message
             if (this.movesInfo) {
                 this.movesInfo.innerText = "GAME OVER";
             }
 
+            this.setupAndShowResultDialog(
+                "Yah :(",
+                this.score,
+                false,
+                "Mulai Lagi",
+                () => {
+                    this.score = 0;
+                    this.currentLevel = 0;
+                    this.setLevel();
+                },
+                () => {
+                    // do nothing
+                }
+            )
         }
     }
 
