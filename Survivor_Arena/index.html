@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<!-- viewport-fit=cover wajib ada: tanpa itu env(safe-area-inset-*) di style.css
+     selalu bernilai 0, sehingga penanganan poni/notch tidak pernah berpengaruh. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Survivor Arena</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div id="game-container">
+
+  <!-- Panggung game: ukuran & posisinya diatur resizeViewport() (src/viewport.js)
+       agar pas dengan area main 390x640 yang sudah diskalakan, lalu dipusatkan.
+       Canvas dan HUD sengaja ditaruh DI DALAMNYA supaya keduanya memakai
+       koordinat yang sama. Tanpa ini HUD mengikuti tepi layar sementara isi
+       game ada di tengah, jadi keduanya tidak pernah sejajar di layar tinggi. -->
+  <div id="game-stage">
+
+    <canvas id="game-canvas"></canvas>
+
+    <div id="hud">
+      <div id="hud-top">
+        <div id="lives"></div>
+        <div id="stage-label">Lvl 1/3</div>
+        <div id="target-time">
+          <span id="timer">00:45</span>
+          <span id="score">Skor: 0 | Target Poin: 0/15</span>
+        </div>
+      </div>
+      <div id="hud-bottom">
+        <span id="level-badge">1</span>
+        <span id="xp-label">XP</span>
+        <div id="xp-bar-track"><div id="xp-bar-fill"></div></div>
+      </div>
+      <div id="buff-list"></div>
+    </div>
+
+  </div>
+
+  <div id="overlay">
+    <div id="overlay-card">
+      <div id="overlay-title">Survivor Arena</div>
+      <div id="overlay-message">Welcome to Survivor Arena!</div>
+      <div id="overlay-actions">
+        <!-- Sengaja dimulai "Memuat…" & disabled: game.js membukanya lewat
+             markReady() setelah aset siap. Kalau JS gagal total, pemain melihat
+             status ini, bukan tombol "Mulai" yang ditekan tanpa hasil. -->
+        <button id="overlay-button" disabled>Memuat…</button>
+        <!-- Hanya muncul di panel hasil (menang/game over), lihat src/game.js -->
+        <button id="overlay-exit" class="hidden">Keluar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="touch-controls">
+    <div id="joystick-base"><div id="joystick-stick"></div></div>
+  </div>
+
+  <!-- Tombol bantuan: tampilkan ulang tutorial "Cara Main" kapan saja -->
+  <button id="howto-btn" aria-label="Cara Main">?</button>
+
+  <!-- Peringatan orientasi: game dirancang untuk layar tegak. Kemunculannya
+       diatur media query di style.css; main.js menjeda permainan selagi ini
+       tampil (batas layarnya harus sama persis di kedua file). -->
+  <div id="rotate-notice">
+    <div id="rotate-icon">📱</div>
+    <p id="rotate-text">Putar perangkatmu ke posisi tegak untuk bermain.</p>
+  </div>
+
+  <!-- Tutorial interaktif "How to Play": spotlight + tooltip per elemen HUD,
+       lalu tutorial gerakan (swipe). Dikendalikan sepenuhnya oleh src/tutorial.js. -->
+  <div id="tutorial-overlay" class="hidden" aria-hidden="true">
+    <div id="tutorial-spotlight"></div>
+
+    <div id="tutorial-tooltip">
+      <div id="tutorial-progress">1/6</div>
+      <p id="tutorial-text"></p>
+      <div id="tutorial-actions">
+        <button id="tutorial-skip">Lewati</button>
+        <button id="tutorial-next">Lanjut</button>
+      </div>
+    </div>
+
+    <div id="tutorial-swipe" class="hidden">
+      <div id="swipe-ring"><div id="swipe-hand">👆</div></div>
+      <p id="swipe-text">Geser untuk menggerakkan karaktermu</p>
+      <button id="tutorial-skip-swipe">Lewati</button>
+    </div>
+  </div>
+
+</div>
+
+<script type="module" src="src/bootstrap.js"></script>
+</body>
+</html>

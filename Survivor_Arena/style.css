@@ -1,0 +1,651 @@
+:root {
+  --bg-deep: #0B0F2B;
+  --panel: #141a3d;
+  --accent-teal: #2DE1C7;
+  --accent-gold: #FFC857;
+  --accent-coral: #FF6F59;
+  --text-light: #EAF2FF;
+  --danger: #FF5470;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: #05070f;
+  color: var(--text-light);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+#game-container {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Panggung game: ukuran & posisinya ditulis resizeViewport() (src/viewport.js).
+   Nilai di sini cuma keadaan awal sebelum skrip jalan.
+   Sengaja TANPA z-index/transform: keduanya akan membuat stacking context baru
+   dan mengurung z-index anak-anaknya, sehingga #hud (5) tidak lagi bisa diadu
+   dengan #touch-controls (6) dan #overlay (10) yang ada di luar stage. */
+#game-stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#game-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* --- HUD ATAS (TRANSPARAN TANPA KOTAK HITAM) --- */
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* Persen, bukan px: HUD kini berada di dalam #game-stage yang lebarnya selalu
+     390 satuan game, jadi 73% = 285 satuan — tepat berhenti sebelum minimap
+     yang digambar mulai dari x=288 (390 - MINIMAP_W 90 - MINIMAP_MARGIN 12).
+     Ikut menyusut/membesar bersama stage, jadi tidak lagi tertimpa minimap di
+     tablet seperti saat angkanya dipatok 110px. */
+  width: 73%;
+  /* Tanpa env(safe-area-inset-top): HUD sekarang diukur dari tepi atas
+     #game-stage, bukan tepi layar. Di HP berponi, stage selalu dipusatkan dan
+     tepi atasnya sudah jauh di bawah poni (iPhone 14: jarak ~102px vs poni
+     ~47px). Menambahkan inset di sini justru mendorong HUD masuk ke area main. */
+  padding: 12px 16px;
+  z-index: 5;
+  pointer-events: none;
+  background: transparent !important; /* Menghilangkan kotak hitam/gradient total */
+  /* Text-shadow gelap agar teks tetap tajam dan terbaca di atas rumput hijau */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.8);
+}
+
+#hud-top {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+#lives {
+  color: var(--danger);
+  letter-spacing: 2px;
+  font-size: 16px;
+}
+
+#stage-label {
+  color: var(--accent-gold);
+}
+
+/* Dibungkus satu wadah supaya kotak highlight tutorial pas & presisi (tidak
+   melebar ke elemen lain saat HUD wrap di layar mobile sempit). */
+#target-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#timer {
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+}
+
+#score {
+  white-space: nowrap;
+  color: var(--text-light);
+}
+
+/* --- BAR XP DI BAWAH NYA --- */
+#hud-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+  max-width: 260px; /* Dibatasi agar bar tidak terlalu panjang/lebar */
+}
+
+/* Lingkaran berisi angka level (XP), sengaja dibedakan bentuk & warnanya dari
+   #stage-label ("Lvl 1/3") supaya tidak rancu — warnanya disamakan dengan
+   warna bar XP (accent-teal), bukan gold seperti label stage. */
+#level-badge {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--bg-deep);
+  background: var(--accent-teal);
+  border-radius: 50%;
+}
+
+#xp-label {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--accent-teal);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+#xp-bar-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.5); /* Track bar gelap transparan */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Diisi lewat transform: scaleX() dari hud.js, bukan width — transform tidak
+   memicu hitung ulang tata letak dan dianimasikan kartu grafis. */
+#xp-bar-fill {
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: var(--accent-teal);
+  box-shadow: 0 0 6px var(--accent-teal); /* Efek neon glow pada bar XP */
+  transition: transform 0.15s ease-out;
+}
+
+/* --- Indikator power-up aktif (damage/speed) beserta sisa waktu --- */
+#buff-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  max-width: 170px;
+}
+
+.buff-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(11, 15, 43, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  /* Prefix wajib: WKWebView/Safari iOS butuh versi -webkit- sampai iOS 18.
+     Tanpa itu, blur-nya hilang sama sekali di iOS 15-17. */
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+.buff-badge .buff-icon {
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.buff-badge .buff-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.buff-badge .buff-name {
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.buff-badge .buff-track {
+  height: 4px;
+  margin-top: 3px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+/* Sengaja tanpa transition: nilainya diperbarui tiap frame, jadi transisi hanya
+   akan dimulai ulang terus-menerus tanpa pernah selesai — bayar biayanya, tak
+   dapat kehalusannya. */
+.buff-badge .buff-fill {
+  height: 100%;
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.buff-badge .buff-time {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+#overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 15, 43, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  z-index: 10;
+  overflow-y: auto;
+}
+
+#overlay.hidden {
+  display: none;
+}
+
+#overlay-card {
+  width: 100%;
+  max-width: 360px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+#overlay-title {
+  font-size: 26px;
+  font-weight: bold;
+  color: var(--accent-gold);
+  margin-bottom: 10px;
+}
+
+#overlay-message {
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-light);
+  max-width: 320px;
+  margin-bottom: 28px;
+  white-space: pre-line;
+}
+
+#overlay-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+#overlay-button {
+  background: var(--accent-coral);
+  color: #1a1a1a;
+  border: none;
+  padding: 13px 40px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255, 111, 89, 0.4);
+}
+
+#overlay-button:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Keadaan awal "Memuat…" sampai aset selesai dimuat (lihat markReady). */
+#overlay-button:disabled {
+  opacity: 0.55;
+  box-shadow: none;
+  cursor: default;
+}
+
+/* Tombol sekunder: sengaja lebih kalem dari "Main lagi" biar tidak salah tekan. */
+#overlay-exit {
+  background: transparent;
+  color: var(--text-light);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 24px;
+  cursor: pointer;
+}
+
+#overlay-exit:active {
+  transform: scale(0.97);
+}
+
+#overlay-exit.hidden {
+  display: none;
+}
+
+#overlay-exit:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* --- Tombol bantuan: buka ulang tutorial "Cara Main" kapan saja --- */
+#howto-btn {
+  position: absolute;
+  right: 12px;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+  z-index: 8;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(11, 15, 43, 0.6);
+  color: var(--text-light);
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  -webkit-backdrop-filter: blur(2px); /* lihat catatan prefix di .buff-badge */
+  backdrop-filter: blur(2px);
+}
+
+#howto-btn:active {
+  transform: scale(0.94);
+}
+
+/* ==========================================================================
+   Peringatan orientasi
+   - Game dikunci pada area 390x640 (tegak). Di layar mendatar yang pendek,
+     area itu menyusut sampai ~40% lebar layar dan zona joystick tidak lagi
+     sejajar dengan gambar — praktis tak bisa dimainkan.
+   - Batas `max-height: 500px` sengaja dipakai supaya tablet mendatar (tinggi
+     ~768px) tidak ikut diblokir; di sana game masih nyaman dimainkan.
+   - PENTING: batas ini harus sama persis dengan yang ada di src/main.js, yang
+     menjeda permainan selagi peringatan ini tampil.
+   ========================================================================== */
+#rotate-notice {
+  display: none;
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  #rotate-notice {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 24px;
+    text-align: center;
+    background: var(--bg-deep);
+  }
+}
+
+#rotate-icon {
+  font-size: 44px;
+  line-height: 1;
+  transform: rotate(90deg);
+}
+
+#rotate-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: bold;
+  color: var(--text-light);
+}
+
+/* ==========================================================================
+   Tutorial interaktif "How to Play"
+   - Spotlight dibuat dengan 1 elemen absolute + box-shadow raksasa (teknik
+     "spotlight overlay" murah): tidak perlu canvas/SVG mask, cukup 1 paint
+     setiap kali langkah berpindah (bukan tiap frame) → sangat ringan.
+   - Semua animasi memakai opacity/transform saja supaya GPU-composited.
+   ========================================================================== */
+#tutorial-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  opacity: 1;
+  transition: opacity 0.35s ease;
+}
+
+#tutorial-overlay.hidden {
+  display: none;
+}
+
+#tutorial-overlay.fade-out {
+  opacity: 0;
+}
+
+/* Selama langkah gerakan (terakhir), biarkan sentuhan tembus ke joystick. */
+#tutorial-overlay.step-movement {
+  pointer-events: none;
+}
+
+#tutorial-spotlight {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 9999px rgba(5, 7, 15, 0.8),
+    0 0 0 3px rgba(45, 225, 199, 0.9),
+    0 0 22px 4px rgba(45, 225, 199, 0.55);
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              top 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              height 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              border-radius 0.35s ease,
+              opacity 0.3s ease;
+  opacity: 0;
+}
+
+#tutorial-spotlight.show {
+  opacity: 1;
+}
+
+#tutorial-tooltip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 240px;
+  max-width: calc(100vw - 32px);
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transform: scale(0.92);
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              top 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease,
+              transform 0.25s ease;
+}
+
+#tutorial-tooltip.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+#tutorial-progress {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: bold;
+  color: var(--accent-teal);
+  background: rgba(45, 225, 199, 0.12);
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+  letter-spacing: 0.3px;
+}
+
+#tutorial-text {
+  margin: 0 0 12px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-light);
+}
+
+#tutorial-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+#tutorial-actions button {
+  border: none;
+  border-radius: 999px;
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#tutorial-skip {
+  background: transparent;
+  color: rgba(234, 242, 255, 0.6);
+}
+
+#tutorial-next {
+  background: var(--accent-coral);
+  color: #1a1a1a;
+}
+
+#tutorial-next:active,
+#tutorial-skip:active {
+  transform: scale(0.96);
+}
+
+/* --- Langkah terakhir: tutorial gerakan (swipe) --- */
+#tutorial-swipe {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 21;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+#tutorial-swipe.show {
+  opacity: 1;
+}
+
+#tutorial-swipe.hidden {
+  display: none;
+}
+
+#swipe-ring {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 2px dashed rgba(45, 225, 199, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#swipe-hand {
+  font-size: 30px;
+  line-height: 1;
+  will-change: transform;
+  animation: swipe-bounce 1.6s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(45, 225, 199, 0.7));
+}
+
+#swipe-text {
+  margin: 0;
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--accent-teal);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
+  text-align: center;
+}
+
+#tutorial-skip-swipe {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-size: 11.5px;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(234, 242, 255, 0.75);
+  cursor: pointer;
+}
+
+@keyframes swipe-bounce {
+  0%, 100% { transform: translateY(-16px); }
+  50%      { transform: translateY(16px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #swipe-hand { animation: none; }
+}
+
+/* Zona sentuh gerak: separuh kiri layar. Joystick floating muncul tepat di
+   titik jari user menyentuh, bukan terkunci di satu posisi tetap. */
+#touch-controls {
+  position: absolute;
+  inset: 0;
+  width: 55%;
+  height: 100%;
+  z-index: 6;
+  touch-action: none;
+}
+
+#joystick-base {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 96px;
+  height: 96px;
+  margin-left: -48px;
+  margin-top: -48px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.12s ease-out, transform 0.12s ease-out;
+  pointer-events: none;
+}
+
+#joystick-base.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+#joystick-stick {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(45, 225, 199, 0.55);
+  transform: translate(0, 0);
+}
