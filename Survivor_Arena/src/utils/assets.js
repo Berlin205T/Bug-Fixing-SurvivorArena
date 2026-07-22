@@ -31,7 +31,6 @@ const SPRITE_MANIFEST = {
 
   // Item pickup — animasi berputar
   coin: { src: 'src/assets/spritesheets/coin/spin.webp', frames: 8, fw: 48, fh: 48 },
-  orb: { src: 'src/assets/spritesheets/orb/spin.webp', frames: 8, fw: 34, fh: 34 },
   heart: { src: 'src/assets/spritesheets/heart/spin.webp', frames: 8, fw: 34, fh: 34 },
 
   // Environment
