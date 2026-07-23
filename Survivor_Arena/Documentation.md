@@ -1,6 +1,6 @@
 # Survivor Arena
 
-Survivor Arena adalah game arena bertahan hidup dengan sudut pandang dari atas (top-down). Kamu berperan sebagai satu karakter yang dikepung musuh dari segala arah, bertugas mengumpulkan poin sambil bertahan sampai waktu habis. Yang bikin seru: karaktermu menembak sendiri ke musuh terdekat, jadi kamu tinggal fokus bergerak, menghindar, dan mengatur posisi — cocok dimainkan santai di HP dengan satu jempol.
+Survivor Arena adalah game arena bertahan  dengan sudut pandang dari atas (top-down). Kamu berperan sebagai satu karakter yang dikepung musuh dari segala arah, bertugas mengumpulkan poin sambil bertahan sampai waktu habis. Yang bikin seru: karaktermu menembak sendiri ke musuh terdekat, jadi kamu tinggal fokus bergerak, menghindar, dan mengatur posisi — cocok dimainkan santai di HP dengan satu jempol.
 
 ---
 
@@ -47,7 +47,7 @@ Kumpulkan koin sampai memenuhi target poin di tiap level sebelum waktu habis. Se
 |---|---|---|
 | **Melee** | Level 1 | Mengejar player, berhenti saat dekat lalu memukul. |
 | **Laser** | Level 2 | Berhenti di kejauhan lalu menembakkan laser secara berkala. |
-| **Exploder** | Level 3 | Lari dua kali lebih cepat, mendekat lalu **meledak**. Tidak bisa ditembak saat sudah ancang-ancang. |
+| **Exploder** | Level 3 | Lari dua kali lebih cepat, mendekat lalu **meledak** sehingga menyebabkan instant kill. Tidak bisa ditembak saat sudah ancang-ancang. |
 
 
 ### Kebutuhan perangkat

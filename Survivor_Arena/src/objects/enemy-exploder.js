@@ -18,14 +18,16 @@ const EXPLODE_RADIUS = 46;      // seberapa luas ledakan melukai player
 
 export class ExploderEnemy {
   // Sama seperti musuh melee; kecepatannya digandakan di dalam.
-  constructor(x, y, hp, damage, speed) {
+  // Catatan: konstruktor TIDAK menerima parameter `damage` karena Exploder
+  // membunuh player lewat flag instantKill (lihat game.js:onPlayerHit),
+  // bukan damage numerik. Ini by design — Exploder = bom kamikaze.
+  constructor(x, y, hp, speed) {
     this.id = exploderIdCounter++;
     this.x = x;
     this.y = y;
     this.r = 11;
     this.hp = hp;
     this.maxHp = hp;
-    this.damage = damage;
     this.speed = speed * 2; // 2x speed
     this.hitFlashUntil = 0;
 
