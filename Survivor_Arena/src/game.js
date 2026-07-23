@@ -204,9 +204,9 @@ export class Game {
     const p = randomEdgePoint(WORLD_W, WORLD_H, 16);
     const baseHp = CONFIG.BASE_ENEMY_HP * Math.pow(CONFIG.ENEMY_HP_GROWTH_PER_STAGE, this.stageIndex);
     const hp = baseHp * 0.75;
-    const dmg = CONFIG.BASE_ENEMY_DAMAGE + CONFIG.ENEMY_DMG_GROWTH_PER_STAGE * this.stageIndex;
     const speed = CONFIG.ENEMY_SPEED + this.stageIndex * 8;
-    this.exploderEnemies.push(new ExploderEnemy(p.x, p.y, hp, dmg, speed));
+    // Exploder tidak memakai damage numerik — membunuh player via instantKill.
+    this.exploderEnemies.push(new ExploderEnemy(p.x, p.y, hp, speed));
     sfxMonster();
   }
 
@@ -421,7 +421,7 @@ export class Game {
 
     for (const meleeEnemy of this.meleeEnemies) {
       if (meleeEnemy.shouldDealDamage(this.player)) {
-        this.onPlayerHit(1);
+        this.onPlayerHit(meleeEnemy.damage);
       }
     }
 
@@ -431,7 +431,7 @@ export class Game {
         if (alreadyHit || !proj.isEnemy || proj.dead) return;
         if (circleCollide(this.player, proj)) {
           alreadyHit = true;
-          this.onPlayerHit(1);
+          this.onPlayerHit(proj.damage);
           proj.dead = true;
         }
       });
