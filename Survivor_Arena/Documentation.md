@@ -1,6 +1,6 @@
 # Survivor Arena
 
-Survivor Arena adalah game arena bertahan hidup dengan sudut pandang dari atas (top-down). Kamu berperan sebagai satu karakter yang dikepung musuh dari segala arah, bertugas mengumpulkan poin sambil bertahan sampai waktu habis. Yang bikin seru: karaktermu menembak sendiri ke musuh terdekat, jadi kamu tinggal fokus bergerak, menghindar, dan mengatur posisi — cocok dimainkan santai di HP dengan satu jempol.
+Survivor Arena adalah game arena bertahan  dengan sudut pandang dari atas (top-down). Kamu berperan sebagai satu karakter yang dikepung musuh dari segala arah, bertugas mengumpulkan poin sambil bertahan sampai waktu habis. Yang bikin seru: karaktermu menembak sendiri ke musuh terdekat, jadi kamu tinggal fokus bergerak, menghindar, dan mengatur posisi — cocok dimainkan santai di HP dengan satu jempol.
 
 ---
 
