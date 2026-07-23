@@ -10,6 +10,7 @@
 // (Ketiganya class terpisah tanpa pewarisan — sengaja, biar tiap jenis musuh
 // bisa diubah tanpa memengaruhi yang lain.)
 import { drawSprite, frameForClip, spriteReady } from '../utils/assets.js';
+import { WORLD_W, WORLD_H } from '../world/background.js'; // <--- Tambahkan import batas dunia
 
 let meleeIdCounter = 0;
 
@@ -103,8 +104,9 @@ export class MeleeEnemy {
       }
     }
 
-    this.x = nextX;
-    this.y = nextY;
+    // --- MODIFIKASI: CLAMP POSISI AGAR TIDAK KELUAR BATAS DUNIA ---
+    this.x = Math.max(this.r, Math.min(WORLD_W - this.r, nextX));
+    this.y = Math.max(this.r, Math.min(WORLD_H - this.r, nextY));
   }
 
   /** Kurangi darah + tampilkan kedipan putih sebentar sebagai tanda kena. */

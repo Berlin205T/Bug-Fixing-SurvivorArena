@@ -286,8 +286,10 @@ export class Game {
       : this.player.currentBulletRange(this.elapsedTime);
     if (nearestDist > range) return;
 
-    const dx = (nearest.x - this.player.x) / nearestDist;
-    const dy = (nearest.y - this.player.y) / nearestDist;
+
+    const targetDist = nearestDist || 1;
+    const dx = (nearest.x - this.player.x) / targetDist;
+    const dy = (nearest.y - this.player.y) / targetDist;
 
     if (hasShotgun) {
       // Tembak menyebar (spread) ke ARAH MUSUH terdekat.

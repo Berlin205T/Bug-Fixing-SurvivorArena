@@ -8,9 +8,35 @@
 // memulai animasi mati) dijelaskan di enemy-melee.js — di sini fokus ke
 // lasernya.
 import { drawSprite, frameForClip, spriteReady } from '../utils/assets.js';
+import { WORLD_W, WORLD_H } from '../world/background.js'; // <--- Tambahkan import batas dunia
 
 let laserIdCounter = 0;
+/**
+ * Memeriksa apakah ada garis pandang lurus (Line of Sight) dari (x1, y1) ke (x2, y2)
+ * tanpa terhalang oleh rintangan (obstacles).
+ */
+function hasLineOfSight(x1, y1, x2, y2, obstacles) {
+  if (!obstacles || obstacles.length === 0) return true;
 
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return true;
+
+  for (const o of obstacles) {
+    // Proyeksi titik pusat rintangan o ke segmen garis dari (x1, y1) ke (x2, y2)
+    const t = Math.max(0, Math.min(1, ((o.x - x1) * dx + (o.y - y1) * dy) / lenSq));
+    const projX = x1 + t * dx;
+    const projY = y1 + t * dy;
+    const distSq = (o.x - projX) ** 2 + (o.y - projY) ** 2;
+
+    // Jika jarak terdekat ke segmen garis lebih kecil dari radius rintangan, pandangan terhalang
+    if (distSq < o.r * o.r) {
+      return false;
+    }
+  }
+  return true;
+}
 export class LaserEnemy {
   // Sama seperti musuh melee; damage di sini dipakai untuk lasernya.
   constructor(x, y, hp, damage, speed) {
@@ -62,8 +88,8 @@ export class LaserEnemy {
     const dy = target.y - this.y;
     const distToPlayer = Math.hypot(dx, dy) || 1;
 
-    // Cek apakah player dalam range serangan
-    const inRange = distToPlayer < this.attackRange;
+    // --- MODIFIKASI ITEM #8: Cek range DAN ketersediaan Line of Sight (LOS) ---
+    const inRange = distToPlayer < this.attackRange && hasLineOfSight(this.x, this.y, target.x, target.y, obstacles);
 
     if (inRange) {
       if (!this.attacking) {
@@ -122,8 +148,9 @@ export class LaserEnemy {
         }
       }
 
-      this.x = nextX;
-      this.y = nextY;
+      // --- MODIFIKASI: CLAMP POSISI AGAR TIDAK KELUAR BATAS DUNIA ---
+      this.x = Math.max(this.r, Math.min(WORLD_W - this.r, nextX));
+      this.y = Math.max(this.r, Math.min(WORLD_H - this.r, nextY));
     }
   }
 
