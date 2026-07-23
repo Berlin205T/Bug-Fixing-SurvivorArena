@@ -21,3 +21,23 @@ export function getRenderQuality() {
 export function isLowQuality() {
   return currentQuality === 'low';
 }
+
+// --- ITEM #13 FIX: Tambahan API tier granular & Auto-adjust statis ---
+/** Cek apakah sedang di kualitas sedang atau rendah. */
+export function isMediumOrLowQuality() {
+  return currentQuality === 'medium' || currentQuality === 'low';
+}
+
+/** 
+ * Evaluasi ulang kualitas secara dinamis berdasarkan performa (FPS).
+ * Dipanggil secara periodik (misal tiap beberapa detik) dari game loop/main.
+ */
+export function evaluateDynamicQuality(averageFps) {
+  if (averageFps < 30 && currentQuality !== 'low') {
+    setRenderQuality('low');
+  } else if (averageFps >= 30 && averageFps < 45 && currentQuality === 'high') {
+    setRenderQuality('medium');
+  } else if (averageFps >= 55 && currentQuality === 'low') {
+    setRenderQuality('medium');
+  }
+}

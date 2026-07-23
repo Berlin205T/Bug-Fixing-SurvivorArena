@@ -5,6 +5,8 @@
 // sekali ke sebuah gambar tersimpan, lalu tinggal ditempel tiap frame biar
 // hemat tenaga. Pohon bergoyang digambar di atasnya saat gambarnya tersedia.
 import { spriteReady, drawSprite, frameForClip } from '../utils/assets.js';
+// --- ITEM #14 FIX: Import pengecekan quality tier ---
+import { isLowQuality } from '../quality.js';
 
 export const WORLD_W = 1200;
 export const WORLD_H = 1200;
@@ -130,6 +132,8 @@ function drawRock(ctx, x, y, r, palette) {
 
 // Gambar latar yang sudah jadi, disimpan untuk siang & malam.
 const cache = { day: null, night: null };
+// --- ITEM #14 FIX: Cache terpisah untuk night mask ---
+let nightMaskCache = null;
 
 /**
  * Gambar seluruh latar (rumput + pohon/batu + bintang saat malam) sekali saja,
@@ -196,6 +200,31 @@ function buildCache(isNight) {
   cache[key] = off;
 }
 
+// --- ITEM #14 FIX: Build cache untuk Night Mask sekali di awal ---
+function buildNightMaskCache() {
+  const off = document.createElement('canvas');
+  off.width = WORLD_W;
+  off.height = WORLD_H;
+  const ctx = off.getContext('2d');
+
+  // Buat lubang cahaya di tengah dunia menggunakan evenodd & radial gradient
+  const cx = WORLD_W / 2;
+  const cy = WORLD_H / 2;
+  const radius = 300;
+
+  const grad = ctx.createRadialGradient(cx, cy, radius * 0.2, cx, cy, radius);
+  grad.addColorStop(0, 'rgba(0, 5, 15, 0)');
+  grad.addColorStop(1, 'rgba(0, 5, 15, 0.75)');
+
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.rect(0, 0, WORLD_W, WORLD_H);
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2, true);
+  ctx.fill('evenodd');
+
+  nightMaskCache = off;
+}
+
 /**
  * Bangun latar siang & malam sekaligus, di muka. Wajib dipanggil SETELAH
  * preloadSprites(): buildCache membaca spriteReady() untuk memilih gambar atau
@@ -208,6 +237,8 @@ function buildCache(isNight) {
 export function prebuildBackgrounds() {
   if (!cache.day) buildCache(false);
   if (!cache.night) buildCache(true);
+  // --- ITEM #14 FIX: Prebuild night mask cache ---
+  if (!nightMaskCache) buildNightMaskCache();
 }
 
 /**
@@ -227,6 +258,13 @@ export function drawBackground(ctx, isNight, camX, camY, viewW, viewH) {
   // Posisi sumber & tujuan sengaja sama: keduanya dalam koordinat dunia, dan
   // transform kamera di game.js yang memindahkannya ke layar.
   ctx.drawImage(cache[key], camX, camY, viewW, viewH, camX, camY, viewW, viewH);
+  
+  // --- ITEM #14 FIX: Blit night mask dari cache jika bukan low quality ---
+  if (isNight && !isLowQuality()) {
+    if (!nightMaskCache) buildNightMaskCache();
+    ctx.drawImage(nightMaskCache, camX, camY, viewW, viewH, camX, camY, viewW, viewH);
+  }
+
   drawTreesAnimated(ctx, isNight);
 }
 
