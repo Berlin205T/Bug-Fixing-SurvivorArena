@@ -19,7 +19,7 @@ import { updateHUD } from './ui/hud.js';
 import { updateVFX, drawVFX, spawnHitParticles, spawnLevelUpBurst, spawnFloatingText, clearVFX } from './effects/vfx.js';
 import { sfxShoot, sfxHit, sfxPoint, sfxLevelUp, sfxPowerUp, sfxMonster, sfxGameOver, sfxExplosion, sfxLaser, sfxSwing } from './effects/sfx.js';
 import { POWERUP_TYPES, POWERUP_META, applyPowerUp } from './effects/powerup-effects.js';
-import { circleCollide, distance, randRange, randInt, randomEdgePoint } from './utils/helpers.js';
+import { circleCollide, distance, randRange, randInt, randomEdgePoint, hasLineOfSight } from './utils/helpers.js';
 import { spriteReady } from './utils/assets.js';
 import { viewport, camera, updateCamera } from './viewport.js';
 import { VIEWPORT_W, VIEWPORT_H, MINIMAP_W, MINIMAP_H, MINIMAP_MARGIN } from './config.js';
@@ -80,6 +80,10 @@ export class Game {
     // Aset belum dimuat. Tombol Mulai ditahan sampai main.js memanggil
     // markReady() — harus di-set sebelum reset(), yang membacanya.
     this.ready = false;
+
+    // Scratch buffer untuk allEnemies() — dialokasikan sekali, di-reuse tiap
+    // frame agar tidak membuat array baru setiap pemanggilan (mengurangi GC).
+    this._enemyScratch = [];
 
     this.reset();
 
@@ -269,20 +273,29 @@ export class Game {
 
   /** Semua musuh (melee, exploder, laser) dijadikan satu daftar. */
   allEnemies() {
-    return [...this.meleeEnemies, ...this.exploderEnemies, ...this.laserEnemies];
+    const buf = this._enemyScratch;
+    buf.length = 0;
+    for (let i = 0; i < this.meleeEnemies.length; i++) buf.push(this.meleeEnemies[i]);
+    for (let i = 0; i < this.exploderEnemies.length; i++) buf.push(this.exploderEnemies[i]);
+    for (let i = 0; i < this.laserEnemies.length; i++) buf.push(this.laserEnemies[i]);
+    return buf;
   }
 
   /** Otomatis bidik musuh terdekat lalu tembak (menyebar saat mode shotgun). */
   tryShoot() {
     if (this.player.fireCooldown > 0) return;
 
-    // Cari musuh terdekat sebagai sasaran.
+    // Cari musuh terdekat yang memiliki line-of-sight terbuka ke player.
     let nearest = null;
     let nearestDist = Infinity;
     for (const enemy of this.allEnemies()) {
       if (!enemy.isTargetable) continue;
       const distToEnemy = distance(this.player, enemy);
       if (distToEnemy < nearestDist) {
+        // Bug Medium/#11 — guard: skip jika overlap sempurna (distance = 0).
+        if (distToEnemy === 0) continue;
+        // Bug High/#8 — LOS check: abaikan musuh yang terblokir obstacle.
+        if (!hasLineOfSight(this.player.x, this.player.y, enemy.x, enemy.y, OBSTACLES)) continue;
         nearestDist = distToEnemy;
         nearest = enemy;
       }
@@ -299,8 +312,11 @@ export class Game {
       : this.player.currentBulletRange(this.elapsedTime);
     if (nearestDist > range) return;
 
-    const dx = (nearest.x - this.player.x) / nearestDist;
-    const dy = (nearest.y - this.player.y) / nearestDist;
+    // Bug Medium/#11 — guard: nearestDist sudah nonzero (dicek di atas), tapi
+    // fallback || 1 sebagai pengaman ganda.
+    const safeDist = nearestDist || 1;
+    const dx = (nearest.x - this.player.x) / safeDist;
+    const dy = (nearest.y - this.player.y) / safeDist;
 
     if (hasShotgun) {
       // Tembak menyebar (spread) ke ARAH MUSUH terdekat.
@@ -368,17 +384,24 @@ export class Game {
     for (const laserEnemy of this.laserEnemies) {
       laserEnemy.update(dt, this.player, this.elapsedTime, OBSTACLES);
       if (laserEnemy.shouldFireLaser()) {
-        const dx = this.player.x - laserEnemy.x;
-        const dy = this.player.y - laserEnemy.y;
-        const dist = Math.hypot(dx, dy) || 1;
-        const dirX = dx / dist;
-        const dirY = dy / dist;
-        const muzzle = laserEnemy.r + 8;
-        const sx = laserEnemy.x + dirX * muzzle;
-        const sy = laserEnemy.y + dirY * muzzle;
-        const laser = spawnProjectile(sx, sy, dirX, dirY, laserEnemy.attackRange, laserEnemy.damage, true);
-        laser.isLaser = true;
-        sfxLaser();
+        // Bug High/#8 — LOS check: jangan tembak jika ada obstacle di jalur.
+        if (!hasLineOfSight(laserEnemy.x, laserEnemy.y, this.player.x, this.player.y, OBSTACLES)) {
+          // Biarkan firedThisCycle = false agar下次 (saat LOS terbuka) tetap tembak.
+          laserEnemy.firedThisCycle = false;
+        } else {
+          const dx = this.player.x - laserEnemy.x;
+          const dy = this.player.y - laserEnemy.y;
+          // Bug Medium/#11 — guard ÷0: hypot(0,0)=0, fallback || 1.
+          const dist = Math.hypot(dx, dy) || 1;
+          const dirX = dx / dist;
+          const dirY = dy / dist;
+          const muzzle = laserEnemy.r + 8;
+          const sx = laserEnemy.x + dirX * muzzle;
+          const sy = laserEnemy.y + dirY * muzzle;
+          const laser = spawnProjectile(sx, sy, dirX, dirY, laserEnemy.attackRange, laserEnemy.damage, true);
+          laser.isLaser = true;
+          sfxLaser();
+        }
       }
     }
 
@@ -428,9 +451,26 @@ export class Game {
       }
     });
 
-    this.meleeEnemies = this.meleeEnemies.filter((meleeEnemy) => !meleeEnemy.isGone());
-    this.exploderEnemies = this.exploderEnemies.filter((exploderEnemy) => !exploderEnemy.isGone());
-    this.laserEnemies = this.laserEnemies.filter((laserEnemy) => !laserEnemy.isGone());
+    // Bug High/#9 — swap-and-pop cleanup: hapus elemen yang sudah mati tanpa
+    // membuat array baru (mencegah alokasi per-frame yang memicu GC).
+    for (let i = this.meleeEnemies.length - 1; i >= 0; i--) {
+      if (this.meleeEnemies[i].isGone()) {
+        this.meleeEnemies[i] = this.meleeEnemies[this.meleeEnemies.length - 1];
+        this.meleeEnemies.pop();
+      }
+    }
+    for (let i = this.exploderEnemies.length - 1; i >= 0; i--) {
+      if (this.exploderEnemies[i].isGone()) {
+        this.exploderEnemies[i] = this.exploderEnemies[this.exploderEnemies.length - 1];
+        this.exploderEnemies.pop();
+      }
+    }
+    for (let i = this.laserEnemies.length - 1; i >= 0; i--) {
+      if (this.laserEnemies[i].isGone()) {
+        this.laserEnemies[i] = this.laserEnemies[this.laserEnemies.length - 1];
+        this.laserEnemies.pop();
+      }
+    }
 
     for (const meleeEnemy of this.meleeEnemies) {
       if (meleeEnemy.shouldDealDamage(this.player)) {
@@ -450,19 +490,23 @@ export class Game {
       });
     }
 
-    for (const pt of this.points) {
+    for (let i = this.points.length - 1; i >= 0; i--) {
+      const pt = this.points[i];
       if (!pt.collected && circleCollide(this.player, pt)) {
         pt.collected = true;
         this.onPointCollected(pt);
       }
+      if (pt.collected) {
+        this.points[i] = this.points[this.points.length - 1];
+        this.points.pop();
+      }
     }
-    this.points = this.points.filter((p) => !p.collected);
 
     for (const pu of this.powerUps) {
       if (!pu.collected && circleCollide(this.player, pu)) {
         pu.collected = true;
         applyPowerUp(pu.type, this.player, this);
-        
+
         let text = 'Power Up!';
         if (pu.type === 'life') text = '+1 Nyawa!';
         if (pu.type === 'damage') text = 'Peluru Sakit!';
@@ -474,9 +518,20 @@ export class Game {
         sfxPowerUp();
       }
     }
-    this.powerUps = this.powerUps.filter((p) => !p.collected);
+    for (let i = this.powerUps.length - 1; i >= 0; i--) {
+      if (this.powerUps[i].collected) {
+        this.powerUps[i] = this.powerUps[this.powerUps.length - 1];
+        this.powerUps.pop();
+      }
+    }
 
-    const alive = (enemyList) => enemyList.filter((enemy) => !enemy.dying).length;
+    // Bug High/#9 — hitung alive tanpa .filter(): iterate forward, swap-and-pop
+    // dari belakang agar tidak ada yang terlewat.
+    const alive = (list) => {
+      let n = 0;
+      for (let i = 0; i < list.length; i++) { if (!list[i].dying) n++; }
+      return n;
+    };
 
     // --- SPAWN MUSUH BERTAHAP ---
     this.meleeSpawnTimer -= dt;

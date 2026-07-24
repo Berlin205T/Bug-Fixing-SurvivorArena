@@ -9,6 +9,7 @@
 // memulai animasi mati) dijelaskan di enemy-melee.js — di sini fokus ke
 // ledakannya.
 import { drawSprite, frameForClip, spriteReady } from '../utils/assets.js';
+import { WORLD_W, WORLD_H } from '../world/background.js';
 
 let exploderIdCounter = 0;
 
@@ -100,8 +101,8 @@ export class ExploderEnemy {
       }
     }
 
-    this.x = nextX;
-    this.y = nextY;
+    this.x = Math.max(0, Math.min(WORLD_W - this.r, nextX));
+    this.y = Math.max(0, Math.min(WORLD_H - this.r, nextY));
   }
 
   /** Seperti musuh melee; tidak mempan saat sudah ancang-ancang meledak. */
