@@ -53,7 +53,7 @@ export const CONFIG = {
   MAX_LIVES: 5,
   START_LIVES: 3,
   XP_TO_LEVEL_BASE: 100, // <--- MODIFIKASI XP: DIUBAH MENJADI 100
-  NIGHT_VISION_RADIUS: 140,
+  NIGHT_VISION_RADIUS: 95, // Dikecilkan dari 140 agar pas seperti jangkauan obor awal
 };
 
 // --- DIKEMBALIKAN KE TOP LEVEL AGAR TOMBOL MULAI SELALU BERFUNGSI ---
@@ -664,33 +664,31 @@ export class Game {
     }
   }
 
+
   /** Gelapkan layar kecuali lingkaran di sekitar player, seperti efek senter. */
   drawNightMask(ctx) {
     const radius = this.player.currentVisionRadius(this.elapsedTime, CONFIG.NIGHT_VISION_RADIUS);
     
     ctx.save();
-    // 1. Gambar kegelapan malam DI LUAR lingkaran pandangan (menggunakan aturan evenodd)
-    ctx.fillStyle = 'rgba(5, 7, 15, 0.94)';
-    ctx.beginPath();
-    // Kotak menutupi seluruh area dunia game
-    ctx.rect(0, 0, WORLD_W, WORLD_H);
-    // Lubang lingkaran berlawanan arah jarum jam tepat di posisi player
-    ctx.arc(this.player.x, this.player.y, radius, 0, Math.PI * 2, true);
-    ctx.fill('evenodd');
+    
+    // Gunakan posisi player sebagai pusat sorotan lampu
+    const px = this.player.x;
+    const py = this.player.y;
 
-    // 2. Efek transisi halus (soft glow) di pinggiran senter agar tidak kaku
-    if (!isLowQuality()) {
-      const gradient = ctx.createRadialGradient(
-        this.player.x, this.player.y, radius * 0.5,
-        this.player.x, this.player.y, radius
-      );
-      gradient.addColorStop(0, 'rgba(5, 7, 15, 0)');
-      gradient.addColorStop(1, 'rgba(5, 7, 15, 0.94)');
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(this.player.x, this.player.y, radius, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    // Buat gradasi murni dari titik pusat (0 = terang) ke luar (gelap pekat)
+    // Berpusat tepat di tubuh player, bukan di ukuran dunia yang besar
+    const gradient = ctx.createRadialGradient(px, py, 0, px, py, radius);
+    gradient.addColorStop(0, 'rgba(5, 7, 15, 0)');       // Pusat: terang benderang (cahaya)
+    gradient.addColorStop(0.4, 'rgba(5, 7, 15, 0.25)');  // Transisi awal lembut
+    gradient.addColorStop(0.75, 'rgba(5, 7, 15, 0.75)'); // Transisi akhir lembut
+    gradient.addColorStop(1, 'rgba(5, 7, 15, 0.95)');    // Luar: gelap pekat malam hari
+
+    // Gambar kotak penutup gelap di area sekitar kamera player menggunakan gradasi lubang cahaya
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    // Kotak digambar seluas viewport kamera agar performa ringan dan presisi
+    ctx.fillRect(camera.x, camera.y, VIEWPORT_W, VIEWPORT_H);
+
     ctx.restore();
   }
 
