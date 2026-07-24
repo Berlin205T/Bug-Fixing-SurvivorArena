@@ -27,7 +27,7 @@ import { isLowQuality } from './quality.js';
 import {
   webviewSignalLaunch, webviewSignalStartRound, webviewSignalEndRound, webviewSignalExit,
 } from './MpBridge.js';
-import { isLowQuality } from './quality.js';
+
 
 // Semua angka pengaturan game dikumpulkan di sini biar gampang diubah.
 export const CONFIG = {
@@ -688,7 +688,6 @@ export class Game {
     gradient.addColorStop(1, 'rgba(5, 7, 15, 0.95)');    
 
     ctx.fillStyle = gradient;
-    ctx.beginPath();
     ctx.fillRect(camera.x, camera.y, VIEWPORT_W, VIEWPORT_H);
     ctx.restore();
   }
