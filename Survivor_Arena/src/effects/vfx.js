@@ -8,7 +8,9 @@
 // sekumpulan partikel di awal, lalu pakai ulang: yang sudah selesai ditandai
 // "menganggur" dan bisa dipakai lagi nanti.
 
-import { PARTICLE_POOL_SIZE, MAX_PARTICLES_HIGH } from '../config.js';
+import { PARTICLE_POOL_SIZE, MAX_PARTICLES_HIGH, MAX_PARTICLES_LOW } from '../config.js';
+
+export { MAX_PARTICLES_HIGH, MAX_PARTICLES_LOW };
 
 // Jenis huruf teks melayang, disimpan sekali biar tidak dihitung ulang terus.
 const FLOATING_TEXT_FONT = 'bold 12px sans-serif';

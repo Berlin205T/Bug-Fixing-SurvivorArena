@@ -43,23 +43,28 @@ export const SPEED_BUFF_BONUS = 40;   // px/detik
  * sampai detik ke berapa" memakai waktu game. Efeknya sendiri dihitung ulang
  * dari catatan itu tiap frame di player.js — tidak ada yang perlu dibatalkan
  * belakangan.
+ *
+ * PR #2: Bug Medium/#16 — fungsi ini sekarang pure untuk state game.
+ * Buffalo player di dalam switch-case (sudah tepat), tapi perubahan ke
+ * game.lives dikembalikan sebagai delta dan diterapkan caller (game.js).
  */
-export function applyPowerUp(type, player, game) {
+export function applyPowerUp(type, player, elapsedTime) {
   switch (type) {
     case 'life':
-      game.lives = Math.min(game.maxLives, game.lives + 1);
-      break;
+      // Kembalikan delta; biarkan caller (game.js) yang mutasi game.lives.
+      return { livesDelta: 1 };
     case 'damage':
-      player.damageBuffUntil = game.elapsedTime + BUFF_SECONDS.damage;
+      player.damageBuffUntil = elapsedTime + BUFF_SECONDS.damage;
       break;
     case 'speed':
-      player.speedBuffUntil = game.elapsedTime + BUFF_SECONDS.speed;
+      player.speedBuffUntil = elapsedTime + BUFF_SECONDS.speed;
       break;
     case 'shotgun':
-      player.shotgunBuffUntil = game.elapsedTime + BUFF_SECONDS.shotgun;
+      player.shotgunBuffUntil = elapsedTime + BUFF_SECONDS.shotgun;
       break;
     case 'rapid':
-      player.rapidBuffUntil = game.elapsedTime + BUFF_SECONDS.rapid;
+      player.rapidBuffUntil = elapsedTime + BUFF_SECONDS.rapid;
       break;
   }
+  return { livesDelta: 0 };
 }

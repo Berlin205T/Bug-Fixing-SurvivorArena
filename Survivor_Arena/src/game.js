@@ -16,14 +16,14 @@ import { PointItem } from './objects/point.js';
 import { PowerUpItem } from './objects/powerup.js';
 import { WORLD_W, WORLD_H, OBSTACLES, drawBackground } from './world/background.js';
 import { updateHUD } from './ui/hud.js';
-import { updateVFX, drawVFX, spawnHitParticles, spawnLevelUpBurst, spawnFloatingText, clearVFX } from './effects/vfx.js';
+import { updateVFX, drawVFX, spawnHitParticles, spawnLevelUpBurst, spawnFloatingText, clearVFX, setMaxParticles, MAX_PARTICLES_LOW, MAX_PARTICLES_HIGH } from './effects/vfx.js';
 import { sfxShoot, sfxHit, sfxPoint, sfxLevelUp, sfxPowerUp, sfxMonster, sfxGameOver, sfxExplosion, sfxLaser, sfxSwing } from './effects/sfx.js';
 import { POWERUP_TYPES, POWERUP_META, applyPowerUp } from './effects/powerup-effects.js';
 import { circleCollide, distance, randRange, randInt, randomEdgePoint, hasLineOfSight } from './utils/helpers.js';
 import { spriteReady } from './utils/assets.js';
 import { viewport, camera, updateCamera } from './viewport.js';
 import { VIEWPORT_W, VIEWPORT_H, MINIMAP_W, MINIMAP_H, MINIMAP_MARGIN } from './config.js';
-import { isLowQuality } from './quality.js';
+import { isLowQuality, evaluateQualityTier, setRenderQuality, getRenderQuality } from './quality.js';
 import {
   webviewSignalLaunch, webviewSignalStartRound, webviewSignalEndRound, webviewSignalExit,
 } from './MpBridge.js';
@@ -53,7 +53,7 @@ export const CONFIG = {
   MAX_LIVES: 5,
   START_LIVES: 3,
   XP_TO_LEVEL_BASE: 100, // <--- MODIFIKASI XP: DIUBAH MENJADI 100
-  NIGHT_VISION_RADIUS: 140,
+  NIGHT_VISION_RADIUS: 120, // rentang 120-140 agar lebih menantang
 };
 
 // --- DIKEMBALIKAN KE TOP LEVEL AGAR TOMBOL MULAI SELALU BERFUNGSI ---
@@ -84,6 +84,15 @@ export class Game {
     // Scratch buffer untuk allEnemies() — dialokasikan sekali, di-reuse tiap
     // frame agar tidak membuat array baru setiap pemanggilan (mengurangi GC).
     this._enemyScratch = [];
+
+    // --- PR #2: Bug Medium/#13 — FPS monitoring state ---
+    this._fpsFrames = 0;
+    this._fpsAccum  = 0;
+    this._fpsEvalInterval = 5;    // evaluasi tiap 5 detik
+    this._lastQualityTier  = null; // null = paksa apply tier saat pertama evaluasi
+
+    // --- PR #2: Bug Medium/#14 — Night mask offscreen canvas cache ---
+    this._nightMaskCache = null;
 
     this.reset();
 
@@ -199,6 +208,35 @@ export class Game {
     }
     // Keluar hanya ditawarkan di panel hasil, bukan di layar intro.
     // (Diset di blok reset-flag di atas agar tombol siap dipakai kembali.)
+  }
+
+  // --- PR #2: Bug Medium/#13 — FPS monitoring ---
+  _evaluateFPS(dt) {
+    if (dt > 0.5) return; // guard Alt-Tab / lag spike
+
+    this._fpsFrames++;
+    this._fpsAccum += dt;
+
+    if (this._fpsAccum < this._fpsEvalInterval) return;
+
+    const fps = this._fpsFrames / this._fpsAccum;
+    this._fpsFrames = 0;
+    this._fpsAccum  = 0;
+
+    const currentTier = this._lastQualityTier || getRenderQuality();
+    const newTier = evaluateQualityTier(fps, currentTier);
+    if (newTier !== this._lastQualityTier) {
+      this._lastQualityTier = newTier;
+      setRenderQuality(newTier);
+
+      if (newTier === 'low') {
+        setMaxParticles(MAX_PARTICLES_LOW);
+      } else if (newTier === 'medium') {
+        setMaxParticles(Math.round((MAX_PARTICLES_HIGH + MAX_PARTICLES_LOW) / 2));
+      } else {
+        setMaxParticles(MAX_PARTICLES_HIGH);
+      }
+    }
   }
 
   /** Sedang di level terakhir (malam, pandangan terbatas)? */
@@ -342,6 +380,8 @@ export class Game {
 
   /** Perbarui semuanya satu langkah: player, musuh, peluru, item, tabrakan, waktu. */
   update(dt, input) {
+    this._evaluateFPS(dt); // PR #2: Bug Medium/#13 — cek & adjust quality tier per-frame
+
     if (this.state === 'dying') {
       this.elapsedTime += dt;
       this.player.update(dt, { x: 0, y: 0 }, this.elapsedTime);
@@ -505,7 +545,11 @@ export class Game {
     for (const pu of this.powerUps) {
       if (!pu.collected && circleCollide(this.player, pu)) {
         pu.collected = true;
-        applyPowerUp(pu.type, this.player, this);
+        // PR #2: Bug Medium/#16 — applyPowerUp sekarang pure untuk game.lives.
+        const delta = applyPowerUp(pu.type, this.player, this.elapsedTime);
+        if (delta.livesDelta) {
+          this.lives = Math.min(this.maxLives, this.lives + delta.livesDelta);
+        }
 
         let text = 'Power Up!';
         if (pu.type === 'life') text = '+1 Nyawa!';
@@ -745,30 +789,62 @@ export class Game {
   /** Gelapkan layar kecuali lingkaran di sekitar player, seperti efek senter. */
   drawNightMask(ctx) {
     const radius = this.player.currentVisionRadius(this.elapsedTime, CONFIG.NIGHT_VISION_RADIUS);
-    
-    ctx.save();
-    // 1. Gambar kegelapan malam DI LUAR lingkaran pandangan (menggunakan aturan evenodd)
-    ctx.fillStyle = 'rgba(5, 7, 15, 0.94)';
-    ctx.beginPath();
-    // Kotak menutupi seluruh area dunia game
-    ctx.rect(0, 0, WORLD_W, WORLD_H);
-    // Lubang lingkaran berlawanan arah jarum jam tepat di posisi player
-    ctx.arc(this.player.x, this.player.y, radius, 0, Math.PI * 2, true);
-    ctx.fill('evenodd');
 
-    // 2. Efek transisi halus (soft glow) di pinggiran senter agar tidak kaku
+    // PR #2: Bug Medium/#14 — cache offscreen canvas agar evenodd path
+    //         hanya digambar ulang saat radius berubah, bukan setiap frame.
+    //         Ukuran 2× viewport sehingga tepi kotak tidak kelihatan
+    //         bahkan saat player dekat pinggir layar.
+    if (!this._nightMaskCache || this._nightMaskCache.radius !== radius) {
+      const w  = VIEWPORT_W * 2;  // 2× lebar viewport
+      const h  = VIEWPORT_H * 2;  // 2× tinggi viewport
+      const cx = VIEWPORT_W;      // titik tengah canvas offscreen
+      const cy = VIEWPORT_H;
+
+      const oc   = document.createElement('canvas');
+      oc.width   = w;
+      oc.height  = h;
+      const octx = oc.getContext('2d');
+
+      // Mask: kotak penuh (gelap) dengan lubang lingkaran di TENGAH canvas.
+      // Saat di-render ke main canvas, offset (player.x - cx, player.y - cy)
+      // memastikan lubang tepat berada di posisi player.
+      octx.fillStyle = 'rgba(5, 7, 15, 0.94)';
+      octx.beginPath();
+      octx.rect(0, 0, w, h);
+      octx.arc(cx, cy, radius, 0, Math.PI * 2, true); // lubang di TENGAH
+      octx.fill('evenodd');
+
+      this._nightMaskCache = { canvas: oc, radius };
+    }
+
+    // --- Render cache ke main canvas (murah: hanya 1× drawImage per frame) ---
+    const w  = this._nightMaskCache.canvas.width;
+    const h  = this._nightMaskCache.canvas.height;
+    const cx = VIEWPORT_W;  // cx/cy offscreen = VIEWPORT_W/H
+    const cy = VIEWPORT_H;
+
+    ctx.save();
+    ctx.drawImage(
+      this._nightMaskCache.canvas,
+      this.player.x - cx,  // offset agar cx jatuh di posisi player.x
+      this.player.y - cy   // offset agar cy jatuh di posisi player.y
+    );
+
+    // Soft glow gradient di pinggiran senter (hanya jika kualitas bukan LOW)
     if (!isLowQuality()) {
-      const gradient = ctx.createRadialGradient(
+      const g = ctx.createRadialGradient(
         this.player.x, this.player.y, radius * 0.5,
         this.player.x, this.player.y, radius
       );
-      gradient.addColorStop(0, 'rgba(5, 7, 15, 0)');
-      gradient.addColorStop(1, 'rgba(5, 7, 15, 0.94)');
-      ctx.fillStyle = gradient;
+      g.addColorStop(0, 'rgba(5, 7, 15, 0)');
+      g.addColorStop(1, 'rgba(5, 7, 15, 0.94)');
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = g;
       ctx.beginPath();
       ctx.arc(this.player.x, this.player.y, radius, 0, Math.PI * 2);
       ctx.fill();
     }
+
     ctx.restore();
   }
 
