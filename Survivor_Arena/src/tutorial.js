@@ -247,6 +247,11 @@ export function isBlockingGameplay() {
   return active && STEPS[stepIndex].id !== 'movement';
 }
 
+/** Apakah langkah saat ini adalah latihan gerak (movement). */
+export function isMovementStep() {
+  return active && STEPS[stepIndex].id === 'movement';
+}
+
 /** Sesuaikan lagi posisi sorotan & penjelasan setelah ukuran layar berubah. */
 export function reposition() {
   if (!active) return;

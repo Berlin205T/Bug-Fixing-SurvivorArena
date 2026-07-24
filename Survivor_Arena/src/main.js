@@ -12,7 +12,7 @@ import { setRenderQuality } from './quality.js';
 import { resizeViewport } from './viewport.js';
 import { prebuildBackgrounds } from './world/background.js';
 import { MAX_PARTICLES_HIGH, MAX_PARTICLES_LOW } from './config.js';
-import { initTutorial, notifyInput, isBlockingGameplay, reposition as repositionTutorial } from './tutorial.js';
+import { initTutorial, notifyInput, isBlockingGameplay, isMovementStep, reposition as repositionTutorial } from './tutorial.js';
 
 // ---- Menentukan kualitas gambar (sekali di awal) --------------------------
 // Ditentukan dari kekuatan HP/laptop dan tidak berubah selama main.
@@ -221,9 +221,13 @@ function loop(now) {
     notifyInput(input.x, input.y);
     // Game dijeda saat tutorial sedang menjelaskan bagian tampilan (biar pemain
     // bisa fokus membaca) dan saat layar mendatar (pesan "putar perangkatmu"
-    // sedang menutupi game). Tampilannya tetap digambar supaya layar tidak
-    // kosong saat jedanya selesai.
-    if (!isBlockingGameplay() && !blockedByOrientation) game.update(dt, input);
+    // sedang menutupi game). Pada langkah "movement" yang tersisa juga dijeda:
+    // tujuannya pemain baru belajar kontrol dasar, bukan melawan musuh —
+    // timer/spawn/damage di game.update() akan membunuh mereka sebelum sempat
+    // bereaksi. Tampilannya tetap digambar supaya layar tidak kosong saat
+    // jedanya selesai.
+    const tutorialBlocking = isBlockingGameplay() || isMovementStep();
+    if (!tutorialBlocking && !blockedByOrientation) game.update(dt, input);
     game.render();
   } catch (err) {
     // Lewati frame ini saja; frame berikutnya sudah antre di atas.

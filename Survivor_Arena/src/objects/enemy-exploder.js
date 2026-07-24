@@ -154,15 +154,22 @@ export class ExploderEnemy {
     return this.deathTime >= 0.9; // 9 frame @ 10fps
   }
 
-  /** Cek apakah player sedang berada di dalam ledakan (cuma melukai sekali). */
-  hitsPlayerNow(player) {
+  /**
+   * Cek apakah player sedang berada di dalam ledakan. Cuma melukai sekali
+   * per ledakan — tapi TIDAK mengunci flag hasHitPlayer kalau hit akan
+   * diabaikan karena player sedang i-frame (lihat onPlayerHit). Tanpa
+   * pengecualian ini, satu ledakan yang masuk saat i-frame bisa
+   * "menelan" kesempatan hit berikutnya yang sah.
+   */
+  hitsPlayerNow(player, elapsedTime) {
     if (!this.explosionActive || this.hasHitPlayer) return false;
     const dist = Math.hypot(player.x - this.x, player.y - this.y);
-    if (dist < this.explodeRadius) {
-      this.hasHitPlayer = true; // cegah damage berulang
-      return true;
-    }
-    return false;
+    if (dist >= this.explodeRadius) return false;
+    // Hormati i-frame: jangan bakar kuota satu-hit bila damage akan
+    // dibuang oleh onPlayerHit.
+    if (player.isInvulnerable && player.isInvulnerable(elapsedTime)) return false;
+    this.hasHitPlayer = true; // cegah damage berulang dari ledakan yang sama
+    return true;
   }
 
   /** Gambar musuh + lingkaran peringatan ancang-ancang + efek ledakan + bar darah. */

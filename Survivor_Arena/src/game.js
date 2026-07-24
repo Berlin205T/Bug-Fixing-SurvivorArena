@@ -361,7 +361,7 @@ export class Game {
         spawnHitParticles(exploderEnemy.x, exploderEnemy.y, '#FF6B4A', 14);
         sfxExplosion();
       }
-      if (exploderEnemy.hitsPlayerNow(this.player)) {
+      if (exploderEnemy.hitsPlayerNow(this.player, this.elapsedTime)) {
         this.onPlayerHit(1, { instantKill: true });
       }
     }
