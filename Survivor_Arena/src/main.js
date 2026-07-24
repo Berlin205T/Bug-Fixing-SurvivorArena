@@ -13,6 +13,7 @@ import { resizeViewport } from './viewport.js';
 import { prebuildBackgrounds } from './world/background.js';
 import { MAX_PARTICLES_HIGH, MAX_PARTICLES_LOW } from './config.js';
 import { initTutorial, notifyInput, isBlockingGameplay, reposition as repositionTutorial } from './tutorial.js';
+import { setRenderQuality, evaluateDynamicQuality } from './quality.js';
 
 // ---- Menentukan kualitas gambar (sekali di awal) --------------------------
 // Ditentukan dari kekuatan HP/laptop dan tidak berubah selama main.
@@ -192,7 +193,41 @@ function currentInputVector() {
 
 // ---- Perulangan utama game -------------------------------------------------
 let lastTime = -1;
+// Pelacak untuk evaluasi FPS dinamis
+let frameCount = 0;
+let fpsTimer = 0;
 
+function loop(now) {
+  requestAnimationFrame(loop);
+
+  try {
+    if (lastTime < 0 || now - lastTime > 500) {
+      lastTime = now;
+      return;
+    }
+
+    const dt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+
+    // --- HITUNG DAN EVALUASI FPS TIAP 3 DETIK ---
+    frameCount++;
+    fpsTimer += dt;
+    if (fpsTimer >= 3.0) {
+      const averageFps = frameCount / fpsTimer;
+      evaluateDynamicQuality(averageFps);
+      frameCount = 0;
+      fpsTimer = 0;
+    }
+    // -------------------------------------------
+
+    const input = currentInputVector();
+    notifyInput(input.x, input.y);
+    if (!isBlockingGameplay() && !blockedByOrientation) game.update(dt, input);
+    game.render();
+  } catch (err) {
+    console.error('Frame dilewati karena error:', err);
+  }
+}
 /**
  * Perulangan utama: baca kontrol, perbarui game (kecuali dijeda tutorial), gambar.
  *
