@@ -63,6 +63,40 @@ export function formatTime(seconds) {
   return `${String(m).padStart(2, '0')}:${String(r).padStart(2, '0')}`;
 }
 
+/**
+ * Cek apakah ada garis lurus (line-of-sight) antara dua titik tanpa diblokir
+ * oleh obstacle berbentuk lingkaran. Memakai closest-point-on-segment secara
+ * analitis — O(n) terhadap jumlah obstacle, tanpa pembuatan array baru.
+ *
+ * NOTE: parameter `obstacles` adalah argumen WAJIB. Caller (game.js / modul
+ * musuh) yang punya akses ke array OBSTACLESwa agar helpers.js tetap menjadi
+ * modul utilitas murni tanpa ketergantungan pada modul dunia permainan.
+ *
+ * Toleransi hitbox: efektif radius blokir = o.r * 0.75, supaya jalur tembakan
+ * tidak terblokir hanya karena menyenggol pinggiran kanopi pohon.
+ */
+export function hasLineOfSight(x1, y1, x2, y2, obstacles) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const lenSq = dx * dx + dy * dy;
+  if (lenSq === 0) return true; // titik yang sama selalu terlihat
+
+  for (let i = 0; i < obstacles.length; i++) {
+    const o = obstacles[i];
+    const effectiveR = o.r * 0.75;
+    const effectiveRSq = effectiveR * effectiveR;
+    const ox = o.x - x1;
+    const oy = o.y - y1;
+    const t = Math.max(0, Math.min(1, (ox * dx + oy * dy) / lenSq));
+    const closestX = x1 + t * dx;
+    const closestY = y1 + t * dy;
+    const ddx = closestX - o.x;
+    const ddy = closestY - o.y;
+    if (ddx * ddx + ddy * ddy < effectiveRSq) return false;
+  }
+  return true;
+}
+
 /** Pilih titik acak di salah satu pinggir dunia, buat memunculkan musuh dari luar layar. */
 export function randomEdgePoint(worldW, worldH, margin = 20) {
   const side = randInt(0, 3);
