@@ -72,6 +72,7 @@ export class Game {
     // Dipakai untuk sinyal ke host WebView (MpBridge). Sengaja di luar reset()
     // karena harus bertahan saat pemain menekan "Main lagi".
     this.hasLaunched = false;
+    // hasExited di-reset di reset() supaya tombol "Keluar" muncul lagi tiap ronde.
     this.hasExited = false;
     this.lastWin = false;
     this.lastScore = 0;
@@ -157,6 +158,10 @@ export class Game {
     this.maxLives = CONFIG.MAX_LIVES;
 
     this.player = new Player();
+    // Snap kamera ke posisi player yang baru supaya tidak meluncur lambat
+    // karena lerp dari posisi kamera lama setelah full restart.
+    camera.x = this.player.x - VIEWPORT_W / 2;
+    camera.y = this.player.y - VIEWPORT_H / 2;
     this.player.powerLevel = 0;
     this.meleeEnemies = [];
     this.exploderEnemies = [];
@@ -173,6 +178,14 @@ export class Game {
 
     clearVFX();
 
+    // Reset flag exit & tombolnya setiap ronde baru — "Keluar" harus ditawarkan
+    // tiap ronde, hanya sinyal webviewSignalExit yang sekali seumur hidup halaman.
+    this.hasExited = false;
+    if (overlayExitEl) {
+      overlayExitEl.disabled = false;
+      overlayExitEl.classList.add('hidden');
+    }
+
     if (overlayTitleEl) {
       overlayTitleEl.textContent = 'Survivor Arena';
       overlayMessageEl.textContent = 'Welcome to Survivor Arena!';
@@ -181,7 +194,7 @@ export class Game {
       if (overlayEl) overlayEl.classList.remove('hidden');
     }
     // Keluar hanya ditawarkan di panel hasil, bukan di layar intro.
-    if (overlayExitEl) overlayExitEl.classList.add('hidden');
+    // (Diset di blok reset-flag di atas agar tombol siap dipakai kembali.)
   }
 
   /** Sedang di level terakhir (malam, pandangan terbatas)? */
@@ -590,6 +603,16 @@ export class Game {
     this.exploderEnemies = [];
     this.laserEnemies = [];
     clearProjectiles();
+    // Bersihkan item, power-up, dan efek yang belum dikoleksi agar tidak
+    // terbawa ke stage baru (mencegah skor gratis + spawn spike).
+    this.points = [];
+    this.powerUps = [];
+    clearVFX();
+    // Reset timer spawn ke kondisi awal agar tidak ada penumpukan spawn
+    // akibat timer yang sudah terlanjur kecil/mendekati 0.
+    this.meleeSpawnTimer = CONFIG.ENEMY_SPAWN_INTERVAL;
+    this.pointSpawnTimer = CONFIG.POINT_SPAWN_INTERVAL;
+    this.powerUpSpawnTimer = CONFIG.POWERUP_SPAWN_INTERVAL;
     this.exploderSpawnTimer = 3.5;
     this.laserSpawnTimer = 5.0;
     spawnLevelUpBurst(this.player.x, this.player.y, '#2DE1C7');
@@ -605,7 +628,7 @@ export class Game {
     this.lastScore = this.score;
     webviewSignalEndRound(won, this.score);
 
-    if (overlayExitEl && !this.hasExited) overlayExitEl.classList.remove('hidden');
+    if (overlayExitEl) overlayExitEl.classList.remove('hidden');
 
     if (overlayTitleEl) {
       overlayTitleEl.textContent = won ? 'Kamu selamat!' : 'Game over';
