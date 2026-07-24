@@ -27,6 +27,7 @@ import { isLowQuality } from './quality.js';
 import {
   webviewSignalLaunch, webviewSignalStartRound, webviewSignalEndRound, webviewSignalExit,
 } from './MpBridge.js';
+import { isLowQuality } from './quality.js';
 
 // Semua angka pengaturan game dikumpulkan di sini biar gampang diubah.
 export const CONFIG = {
@@ -665,30 +666,30 @@ export class Game {
   }
 
 
-  /** Gelapkan layar kecuali lingkaran di sekitar player, seperti efek senter. */
   drawNightMask(ctx) {
+    // --- ITEM #13 & #14 OPTIMIZATION ---
+    // Jika terdeteksi perangkat low-end, gunakan kotak gelap polos yang sangat ringan (tanpa gradasi berat)
+    if (isLowQuality()) {
+      ctx.fillStyle = 'rgba(5, 7, 15, 0.95)';
+      ctx.fillRect(camera.x, camera.y, VIEWPORT_W, VIEWPORT_H);
+      return;
+    }
+
     const radius = this.player.currentVisionRadius(this.elapsedTime, CONFIG.NIGHT_VISION_RADIUS);
     
     ctx.save();
-    
-    // Gunakan posisi player sebagai pusat sorotan lampu
     const px = this.player.x;
     const py = this.player.y;
 
-    // Buat gradasi murni dari titik pusat (0 = terang) ke luar (gelap pekat)
-    // Berpusat tepat di tubuh player, bukan di ukuran dunia yang besar
     const gradient = ctx.createRadialGradient(px, py, 0, px, py, radius);
-    gradient.addColorStop(0, 'rgba(5, 7, 15, 0)');       // Pusat: terang benderang (cahaya)
-    gradient.addColorStop(0.4, 'rgba(5, 7, 15, 0.25)');  // Transisi awal lembut
-    gradient.addColorStop(0.75, 'rgba(5, 7, 15, 0.75)'); // Transisi akhir lembut
-    gradient.addColorStop(1, 'rgba(5, 7, 15, 0.95)');    // Luar: gelap pekat malam hari
+    gradient.addColorStop(0, 'rgba(5, 7, 15, 0)');       
+    gradient.addColorStop(0.4, 'rgba(5, 7, 15, 0.25)');  
+    gradient.addColorStop(0.75, 'rgba(5, 7, 15, 0.75)'); 
+    gradient.addColorStop(1, 'rgba(5, 7, 15, 0.95)');    
 
-    // Gambar kotak penutup gelap di area sekitar kamera player menggunakan gradasi lubang cahaya
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    // Kotak digambar seluas viewport kamera agar performa ringan dan presisi
     ctx.fillRect(camera.x, camera.y, VIEWPORT_W, VIEWPORT_H);
-
     ctx.restore();
   }
 
